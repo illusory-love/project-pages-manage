@@ -24,7 +24,8 @@ function deletePages(pageName) {
 	}
 }
 
-module.exports = (pageName, option) => {
+module.exports = function(pageName, option) {
+	console.log(this)
 	// 判断页面是否存在
 	if (!fileIsExist(pageName)){
 		console.error(`>>> 删除失败 页面【${ pageName }】不存在`.red)
