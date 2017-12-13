@@ -4,22 +4,24 @@ const fs     = require('fs-extra')
 const colors = require('colors')
 const format = require('string-format')
 
-const { FileExist, Log, Error } = require('./utils')
+const { FileExist, forEachFiles } = require('./utils')
 const { DeleteProcessing } = require('./commander-delete')
 const { cwd, dir }     = require('./constants')
+const templates = require('./template')
 // format 方法注册
 format.extend(String.prototype)
 
 // 常量字符定义
-const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
-const STREND   = `>>> 页面『{0}』{1}完成。`.magenta
-const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
+const STRBEIGN = `>>> 模版『{0}』正在{1}...`.magenta
+const STREND   = `>>> 模版『{0}』{1}完成。`.magenta
+const STRNOT   = `>>> 模版『{0}』不存在。`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
+const STRABORT = `>>> 模版『{0}』{1}行为被用户中止`.yellow
 
-const TEXTCREATE = '创建'
-const TEXTCOVER = '覆盖'
+const TEXTCREATE  = '创建'
+const TEXTCOVER   = '覆盖'
 const TEXTREPLACE = '替换'
-const TEXTCANCEL = '取消'
+const TEXTCANCEL  = '取消'
 
 /**
  * 创建页面
@@ -29,23 +31,79 @@ const TEXTCANCEL = '取消'
  * @param  {string} actionText 操作文本
  */
 function CreateProcessing(pageName, targetPath, moduleName = '', actionText){
-	Log(STRBEIGN.format(pageName, actionText))
 	// 当前模版路
-	let sourcePath = path.join(dir, `../templates`, moduleName, `module`)
+	let temp = templates(moduleName)
+
+	if (temp.length){
+		// 验证当前是否有多个模版
+		if (temp.length > 1){
+			// 获取选择项
+			const choices = temp.map((tmp, idx) => `「${pageName + idx}」\t ${tmp.module}`).concat(['取消'])
+			// 弹出选择列表
+			const prompt = new List({
+				name: 'choiceTemplate',
+				message: `请选择您需要{0}的模版`.format(actionText),
+				choices
+			})
+			prompt.ask(answer => {
+				console.console.log(answer)
+			})
+		} else {
+			operationModule(temp[0], pageName, actionText, targetPath)
+		}
+	} else {
+		console.warn(STRNOT.format(pageName))
+		process.exit(0)
+	}
+}
+
+async function operationModule(temp, pageName, actionText, targetPath){
+	// 执行开始创建
+	console.log(STRBEIGN.format(pageName, actionText))
+	// 获取源模版路径
+	let sourcePath = temp.module
 	// 开始复制或覆盖文件
 	try{
+		// 操作前的回调
+		const cbResult = await temp.onBefore && temp.onBefore('create', temp.module)
+
+		if (cbResult === false){
+			console.log(STRABORT.format(pageName, actionText))
+			process.exit(0)
+		}
+		// 复制模版目录
 		fs.copySync(sourcePath, targetPath)
-		Log(STREND.format(pageName, actionText))
+
+		if (temp.config.rename){
+			console.log(`>>> 开始文件重命名`.magenta)
+			// 遍历目录下所有的文件
+			forEachFiles(targetPath, (pathname, file) => {
+				// 获取新老文件的目录
+				const oldPathname = pathname
+				const newPathname = pathname.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${pageName}$1`)
+				// 日志输出时的旧文件
+				const outPathname = oldPathname.replace(cwd, '')
+				// 开始重命名
+				fs.renameSync(oldPathname, newPathname)
+				// 打印重命名的过程
+				console.log(`${outPathname} => ${newPathname}`.gray)
+			});
+			console.log(`>>> 文件重命名结束`.magenta)
+		}
+
+		console.log(STREND.format(pageName, actionText))
+
+		temp.onAfter && temp.onAfter('create', temp.module)
 	} catch (err) {
-		Error(STRFAIL.format(pageName, actionText, err))
-		throw err
+		console.error(STRFAIL.format(pageName, actionText, err))
+		process.exit(0)
 	}
 }
 
 /**
  * 获取用户选择结果对应的输出文本
  * @param  {string} answer 选择结果
- * @return {string}        选对结果对应的输出文本
+ * @return {string}        选择结果对应的输出文本
  */
 function actionTextByAnswer(answer){
 	// 当前的行为文本
@@ -60,7 +118,7 @@ function actionTextByAnswer(answer){
 }
 
 module.exports = (pageName, option) => {
-	// console.log('module into:', pageName, option)
+	// console.console.log('module into:', pageName, option)
 
 	// 获取模版名称
 	const moduleName = option.template;	
