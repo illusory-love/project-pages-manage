@@ -8,6 +8,7 @@ const { cwd, dir } = require('./constants')
  * @param  {string} pagename 文件或目录名称
  * @return {object}          判断结果
  *         return.result {boolean} 文件或目录是否存在
+ *         return.page   {string}  文件或目录名称
  *         return.path   {string}  文件或目录的完整路径
  */
 exports.FileExist = (pagename) => {
@@ -16,6 +17,7 @@ exports.FileExist = (pagename) => {
 	// 当前目录是否已存在
 	return {
 		result: fs.pathExistsSync(fullPath),
+		page  : pagename,
 		path  : fullPath
 	}
 }

@@ -12,11 +12,11 @@ const templates = require('./template')
 format.extend(String.prototype)
 
 // 常量字符定义
-const STRBEIGN = `>>> 模版『{0}』正在{1}...`.magenta
-const STREND   = `>>> 模版『{0}』{1}完成。`.magenta
-const STRNOT   = `>>> 模版『{0}』不存在。`.yellow
+const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
+const STREND   = `>>> 页面『{0}』{1}完成。`.magenta
+const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
+const STRABORT = `>>> 页面『{0}』{1}行为被用户中止`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
-const STRABORT = `>>> 模版『{0}』{1}行为被用户中止`.yellow
 
 const TEXTCREATE  = '创建'
 const TEXTCOVER   = '覆盖'
@@ -25,20 +25,22 @@ const TEXTCANCEL  = '取消'
 
 /**
  * 创建页面
- * @param  {string} pageName   将要创建的页面名称
- * @param  {string} targetPath 当前页面或目录完整路径
+ * @param  {string} objTarget  目标创建页信息对象
+ *                  objTarget.result {boolean} 目标文件是否存在
+ *                  objTarget.page   {string}  目标页面名称
+ *                  objTarget.path   {string}  目标文件完整路径
  * @param  {string} moduleName 模版名称
  * @param  {string} actionText 操作文本
  */
-function CreateProcessing(pageName, targetPath, moduleName = '', actionText){
+function CreateProcessing(objTarget, moduleName = 'normal', actionText = TEXTCREATE){
 	// 当前模版路
-	let temp = templates(moduleName)
+	let objTemp = templates(moduleName)
 
-	if (temp.length){
+	if (objTemp.length){
 		// 验证当前是否有多个模版
-		if (temp.length > 1){
+		if (objTemp.length > 1){
 			// 获取选择项
-			const choices = temp.map((tmp, idx) => `「${pageName + idx}」\t ${tmp.module}`).concat(['取消'])
+			const choices = objTemp.map((tmp, idx) => `「${objTarget.page + idx}」\t ${tmp.module}`).concat(['取消'])
 			// 弹出选择列表
 			const prompt = new List({
 				name: 'choiceTemplate',
@@ -49,53 +51,70 @@ function CreateProcessing(pageName, targetPath, moduleName = '', actionText){
 				console.console.log(answer)
 			})
 		} else {
-			operationModule(temp[0], pageName, actionText, targetPath)
+			// 创建文件
+			operationModule(objTemp[0], objTarget, actionText)
 		}
 	} else {
+		// 模版不存在,输出警告直接退出
 		console.warn(STRNOT.format(pageName))
 		process.exit(0)
 	}
 }
 
-async function operationModule(temp, pageName, actionText, targetPath){
+/**
+ * 根据指定的模版生成页面
+ * @param  {object} objTemp       模版信息对象
+ *                  objTemp.module {string} 模版名称
+ *                  objTemp.config {object} 模版配置信息
+ *                  objTemp.script {object} 模版自定义脚本
+ * @param  {string} target  目标创建页信息对象
+ *                  target.result {boolean} 目标文件是否存在
+ *                  target.page   {string}  目标页面名称
+ *                  target.path   {string}  目标文件完整路径
+ * @param  {string} actionText 当前的操作名称
+ */
+async function operationModule(objTemp, target, actionText){
 	// 执行开始创建
-	console.log(STRBEIGN.format(pageName, actionText))
-	// 获取源模版路径
-	let sourcePath = temp.module
+	console.log(STRBEIGN.format(target.page, actionText))
 	// 开始复制或覆盖文件
 	try{
-		// 操作前的回调
-		const cbResult = await temp.onBefore && temp.onBefore('create', temp.module)
+		// 判断是否是替换
+		if (actionText == TEXTREPLACE){
+			// 先删除目标目录
+			fs.removeSync(target.path)
+		}
 
+		// 获取源模版路径
+		let modulePath = objTemp.module
+		let script     = objTemp.script
+		let config     = objTemp.config
+		// 操作前的回调
+		const cbResult = await script.onBefore && script.onBefore('create', objTemp.module, target.path)
+		// 根据自定义脚本返回值确定是否继续操作
 		if (cbResult === false){
-			console.log(STRABORT.format(pageName, actionText))
+			console.log(STRABORT.format(target.page, actionText))
 			process.exit(0)
 		}
-		// 复制模版目录
-		fs.copySync(sourcePath, targetPath)
 
-		if (temp.config.rename){
-			console.log(`>>> 开始文件重命名`.magenta)
-			// 遍历目录下所有的文件
-			forEachFiles(targetPath, (pathname, file) => {
-				// 获取新老文件的目录
-				const oldPathname = pathname
-				const newPathname = pathname.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${pageName}$1`)
-				// 日志输出时的旧文件
-				const outPathname = oldPathname.replace(cwd, '')
-				// 开始重命名
-				fs.renameSync(oldPathname, newPathname)
-				// 打印重命名的过程
-				console.log(`${outPathname} => ${newPathname}`.gray)
-			});
-			console.log(`>>> 文件重命名结束`.magenta)
-		}
+		console.log(`[${actionText}]`.cyan + ` ${modulePath} => ${target.path}`)
+		// 单文件创建, 便于输出日志
+		forEachFiles(modulePath, (pathname, file) => {
+			let sourcePath = pathname;
+			let targetPath = path.join(target.path, file);
+			// 是否需要重命名
+			if (config.rename) {
+				targetPath = targetPath.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${target.page}$1`)
+			}
+			// 创建或覆盖文件
+			fs.copySync(sourcePath, targetPath)
 
-		console.log(STREND.format(pageName, actionText))
-
-		temp.onAfter && temp.onAfter('create', temp.module)
+			console.log(`[${actionText}]`.cyan + ` ${sourcePath} => ${targetPath}`)
+		})
+		console.log(STREND.format(target.page, actionText))
+		// 操作完成后的回调
+		script.onAfter && script.onAfter('create', objTemp.module, target.path)
 	} catch (err) {
-		console.error(STRFAIL.format(pageName, actionText, err))
+		console.error(STRFAIL.format(target.page, actionText, err))
 		process.exit(0)
 	}
 }
@@ -122,7 +141,6 @@ module.exports = (pageName, option) => {
 
 	// 获取模版名称
 	const moduleName = option.template;	
-
 	// 获取当前文件信息
 	const exist = FileExist(pageName);
 	// 判断当前页面是否已存在
@@ -142,11 +160,11 @@ module.exports = (pageName, option) => {
 			// 操作结果
 			const actionText = actionTextByAnswer(answer)
 			// 如果有文本, 则执行后续操作
-			actionText && CreateProcessing(pageName, exist.path, moduleName, actionText)
+			actionText && CreateProcessing(exist, moduleName, actionText)
 		})
 	} else {
 		// 直接创建页面
-		CreateProcessing(pageName, exist.path, moduleName, TEXTCREATE);
+		CreateProcessing(exist, moduleName, TEXTCREATE);
 	}
 }
 
