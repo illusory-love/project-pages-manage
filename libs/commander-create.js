@@ -15,6 +15,7 @@ format.extend(String.prototype)
 const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
 const STREND   = `>>> 页面『{0}』{1}完成。`.magenta
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
+const STRNOTTMP= `>>> 模版『{0}』不存在。`.yellow
 const STRABORT = `>>> 页面『{0}』{1}行为被用户中止`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
 
@@ -25,14 +26,15 @@ const TEXTCANCEL  = '取消'
 
 /**
  * 创建页面
- * @param  {string} objTarget  目标创建页信息对象
- *                  objTarget.result {boolean} 目标文件是否存在
- *                  objTarget.page   {string}  目标页面名称
- *                  objTarget.path   {string}  目标文件完整路径
- * @param  {string} moduleName 模版名称
- * @param  {string} actionText 操作文本
+ * @param  {string} target  目标创建页信息对象
+ *                  target.result {boolean} 目标文件是否存在
+ *                  target.name   {string}  目标页面名称
+ *                  target.path   {string}  目标文件完整路径
+ * @param  {string}  moduleName    模版名称
+ * @param  {string}  actionText    操作文本
+ * @param  {boolean} forbidLogger  禁止输出日志
  */
-function CreateProcessing(objTarget, moduleName = 'normal', actionText = TEXTCREATE){
+function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbidLogger){
 	// 当前模版路
 	let objTemp = templates(moduleName)
 
@@ -40,7 +42,7 @@ function CreateProcessing(objTarget, moduleName = 'normal', actionText = TEXTCRE
 		// 验证当前是否有多个模版
 		if (objTemp.length > 1){
 			// 获取选择项
-			const choices = objTemp.map((tmp, idx) => `「${objTarget.page + idx}」\t ${tmp.module}`).concat(['取消'])
+			const choices = objTemp.map((tmp, idx) => `「${target.name + idx}」\t ${tmp.module}`).concat(['取消'])
 			// 弹出选择列表
 			const prompt = new List({
 				name: 'choiceTemplate',
@@ -48,15 +50,15 @@ function CreateProcessing(objTarget, moduleName = 'normal', actionText = TEXTCRE
 				choices
 			})
 			prompt.ask(answer => {
-				console.console.log(answer)
+				console.log(answer)
 			})
 		} else {
 			// 创建文件
-			operationModule(objTemp[0], objTarget, actionText)
+			operationModule(objTemp[0], target, actionText, forbidLogger)
 		}
 	} else {
 		// 模版不存在,输出警告直接退出
-		console.warn(STRNOT.format(pageName))
+		console.warn(STRNOTTMP.format(moduleName))
 		process.exit(0)
 	}
 }
@@ -69,19 +71,20 @@ function CreateProcessing(objTarget, moduleName = 'normal', actionText = TEXTCRE
  *                  objTemp.script {object} 模版自定义脚本
  * @param  {string} target  目标创建页信息对象
  *                  target.result {boolean} 目标文件是否存在
- *                  target.page   {string}  目标页面名称
+ *                  target.name   {string}  目标页面名称
  *                  target.path   {string}  目标文件完整路径
- * @param  {string} actionText 当前的操作名称
+ * @param  {string}  actionText    当前的操作名称
+ * @param  {boolean} forbidLogger  禁止输出日志
  */
-async function operationModule(objTemp, target, actionText){
+async function operationModule(objTemp, target, actionText, forbidLogger){
 	// 执行开始创建
-	console.log(STRBEIGN.format(target.page, actionText))
+	forbidLogger || console.log(STRBEIGN.format(target.name, actionText))
 	// 开始复制或覆盖文件
 	try{
 		// 判断是否是替换
 		if (actionText == TEXTREPLACE){
 			// 先删除目标目录
-			fs.removeSync(target.path)
+			DeleteProcessing(target, true)
 		}
 
 		// 获取源模版路径
@@ -92,7 +95,7 @@ async function operationModule(objTemp, target, actionText){
 		const cbResult = await script.onBefore && script.onBefore('create', objTemp.module, target.path)
 		// 根据自定义脚本返回值确定是否继续操作
 		if (cbResult === false){
-			console.log(STRABORT.format(target.page, actionText))
+			console.log(STRABORT.format(target.name, actionText))
 			process.exit(0)
 		}
 
@@ -100,21 +103,21 @@ async function operationModule(objTemp, target, actionText){
 		// 单文件创建, 便于输出日志
 		forEachFiles(modulePath, (pathname, file) => {
 			let sourcePath = pathname;
-			let targetPath = path.join(target.path, file);
+			let targetPath = path.join(target.path, pathname.replace(objTemp.module, ''));
 			// 是否需要重命名
 			if (config.rename) {
-				targetPath = targetPath.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${target.page}$1`)
+				targetPath = targetPath.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${target.name}$1`)
 			}
 			// 创建或覆盖文件
 			fs.copySync(sourcePath, targetPath)
 
 			console.log(`[${actionText}]`.cyan + ` ${sourcePath} => ${targetPath}`)
 		})
-		console.log(STREND.format(target.page, actionText))
+		forbidLogger || console.log(STREND.format(target.name, actionText))
 		// 操作完成后的回调
 		script.onAfter && script.onAfter('create', objTemp.module, target.path)
 	} catch (err) {
-		console.error(STRFAIL.format(target.page, actionText, err))
+		console.error(STRFAIL.format(target.name, actionText, err))
 		process.exit(0)
 	}
 }

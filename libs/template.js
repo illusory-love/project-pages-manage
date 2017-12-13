@@ -39,8 +39,8 @@ function templateInformationByPathForCallback(tempPath){
 
 	return {
 		module: modulePath,
-		config: fs.pathExistsSync(configPath) ? Yml.load(configPath) : null,
-		script: fs.pathExistsSync(scriptPath) ? require(scriptPath) : null
+		config: fs.pathExistsSync(configPath) ? Yml.load(configPath) : {},
+		script: fs.pathExistsSync(scriptPath) ? require(scriptPath) : {}
 	}
 }
 

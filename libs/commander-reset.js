@@ -4,7 +4,7 @@ const fs      = require('fs-extra')
 const colors  = require('colors')
 const format  = require('string-format')
 
-const { FileExist, Log, Error, Warn } = require('./utils')
+const { FileExist, forEachFiles } = require('./utils')
 const { DeleteProcessing }  = require('./commander-delete')
 const { CreateProcessing }  = require('./commander-create')
 // format 方法注册
@@ -19,34 +19,39 @@ const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
 
 /**
  * 重置操作
- * @param {string} page 	  页面名称
- * @param {string} path 	  文件地址
- * @param {string} moduleName 模版名称
+ * @param {string}  target  	 目标创建页信息对象
+ *                  target.result {boolean} 目标文件是否存在
+ *                  target.name   {string}  目标页面名称
+ *                  target.path   {string}  目标文件完整路径
+ * @param {string}  moduleName   模版名称
+ * @param {boolean} forbidLogger 禁止输出日志
  */
-function ResetProcessing(page, path, moduleName){
-	Log(STRBEIGN.format(page))
+async function ResetProcessing(target, moduleName, forbidLogger){
+	forbidLogger || console.log(STRBEIGN.format(target.name))
 	try{
 		// 删除当前页面
-		DeleteProcessing(page, path)
+		await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		CreateProcessing(page, path, moduleName, '创建')
-		Log(STREND.format(page))
+		await CreateProcessing(target, moduleName, '创建', true)
+
+		forbidLogger || console.log(STREND.format(target.name))
 	} catch (err) {
-		Error(STRFAIL.format(page, err))
+		console.error(STRFAIL.format(target.name, err))
 	}
 }
 
 module.exports = (pageName, option) => {
 	// 获取当前文件信息
-	const { result, path } = FileExist(pageName);
+	const exist = FileExist(pageName)
 
 	// 判断页面是否存在 
-	if (!result) return Warn(STRNOT.format(pageName))
+	if (!exist.result) 
+		return console.warn(STRNOT.format(pageName))
 
 	// 提示确认是否删除 
-	const propmt = new Confirm(`您确定要重置此页面吗？`);
+	const propmt = new Confirm(`您确定要重置此页面吗？`)
 	// 监听选择结果
-	propmt.ask(answer => answer && ResetProcessing(pageName, path, option.template))
+	propmt.ask(answer => answer && ResetProcessing(exist, option.template))
 }
 
 module.exports.ResetProcessing = ResetProcessing
