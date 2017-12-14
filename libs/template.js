@@ -1,7 +1,8 @@
-const path         = require('path')
-const fs           = require('fs-extra')
+const path = require('path')
+const fs   = require('fs-extra')
+const Yml  = require('yml')
+
 const { cwd, dir } = require('./constants')
-const Yml          = require('yml')
 
 /**
  * 获取指定名称的所有模版信息

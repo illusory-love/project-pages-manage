@@ -31,4 +31,14 @@ program
 	.option('-t, --template <pagename>', '指定页面模版名称', 'normal')
 	.action(require('./commander-reset'))
 
+// 自定义页面模版管理
+program
+	.command('template')
+	.alias('t')
+	.description('可添加自定义页面模版')
+	.option('-a, --add <modulename> [global]', '添加模版')
+	.option('-g, --global', '添加到全局')
+	.action(require('./commander-template'))
+
+
 program.parse(process.argv)
