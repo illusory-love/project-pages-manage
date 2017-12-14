@@ -4,7 +4,7 @@ const fs      = require('fs-extra')
 const colors  = require('colors')
 const format  = require('string-format')
 
-const { FileExist, forEachFiles } = require('./utils')
+const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing }  = require('./commander-delete')
 const { CreateProcessing }  = require('./commander-create')
 // format 方法注册

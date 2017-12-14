@@ -1,3 +1,11 @@
-# 模版目录
-DefaultTemplate: '../templates'
-CustomTemplate: ''
+template:
+  default: 
+    - ../templates/defaults
+  custom:
+    dir:
+      - ../templates/customize
+    cwd:
+      - xxxx
+      - xxxxooo
+      - testmodule
+      - test/module

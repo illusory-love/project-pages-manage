@@ -4,10 +4,10 @@ const fs     = require('fs-extra')
 const colors = require('colors')
 const format = require('string-format')
 
-const { FileExist, forEachFiles } = require('./utils')
+const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing } = require('./commander-delete')
-const { cwd, dir }     = require('./constants')
-const templates = require('./template')
+const { cwd, dir }     = require('../constants')
+const templates = require('../template')
 // format 方法注册
 format.extend(String.prototype)
 

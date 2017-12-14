@@ -26,7 +26,6 @@ exports.FileExist = (pagename) => {
  * 遍历目录下的所有文件
  * @param  {string}   directory 目录路径
  * @param  {function} step      每次遍历到目录时的回调
- * @param  {number}   deep      遍历层级(默认: 1)
  */
 exports.forEachFiles = (directory, cb) => {
 	// 获取目录下的所有文件
@@ -39,9 +38,8 @@ exports.forEachFiles = (directory, cb) => {
 		if (stat.isDirectory()){
 			// 递归获取目录下的文件
 			exports.forEachFiles(pathname, cb)
-		} else {
-			// 获取当前文件路径并返回
-			cb && cb(pathname, file)
 		}
+		// 获取当前文件路径并返回
+		cb && cb(pathname, file)
 	})
 }

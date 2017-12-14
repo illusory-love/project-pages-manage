@@ -1,6 +1,6 @@
 const path = require('path')
 const fs   = require('fs-extra')
-const Yml  = require('yml')
+const Yaml = require('read-yaml')
 
 const { cwd, dir } = require('./constants')
 
@@ -11,7 +11,7 @@ const { cwd, dir } = require('./constants')
  */
 function getExistTemplateInformation(pathName){
 	// 获取配制信息
-	const config = Yml.load(path.join(dir, `config.yml`))
+	const config = Yaml.sync(path.join(dir, `config.yml`))
 	// 优先取当前执行命令的目录
 	// 添加配制中的所有模版路径
 	const cusDirectorys = config.CustomTemplate.split(',')
@@ -40,7 +40,7 @@ function templateInformationByPathForCallback(tempPath){
 
 	return {
 		module: modulePath,
-		config: fs.pathExistsSync(configPath) ? Yml.load(configPath) : {},
+		config: fs.pathExistsSync(configPath) ? Yaml.sync(configPath) : {},
 		script: fs.pathExistsSync(scriptPath) ? require(scriptPath) : {}
 	}
 }

@@ -3,7 +3,7 @@ const fs      = require('fs-extra')
 const colors  = require('colors')
 const format  = require('string-format')
 
-const { FileExist, forEachFiles } = require('./utils')
+const { FileExist, forEachFiles } = require('../utils')
 // format 方法注册
 format.extend(String.prototype)
 // 常量字符定义
