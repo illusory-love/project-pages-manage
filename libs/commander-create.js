@@ -111,7 +111,9 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 			// 创建或覆盖文件
 			fs.copySync(sourcePath, targetPath)
 
-			console.log(`[${actionText}]`.cyan + ` ${sourcePath} => ${targetPath}`)
+			const outPath = targetPath.split('/').slice(0, -1).join('/')
+			const outFile = targetPath.split('/').slice(-1)[0]
+			console.log(`[${actionText}]`.cyan + ` ${outPath}/{${file} => ${outFile}}`)
 		})
 		forbidLogger || console.log(STREND.format(target.name, actionText))
 		// 操作完成后的回调
