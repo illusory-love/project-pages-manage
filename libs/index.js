@@ -33,7 +33,7 @@ program
 
 // 自定义页面模版管理
 program
-	.command('template')
+	.command('template <cmd> [name]')
 	.alias('t')
 	.description('可添加自定义页面模版')
 	.option('-a, --add <modulename>', '添加模版')

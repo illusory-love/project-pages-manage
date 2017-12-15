@@ -26,11 +26,14 @@ function ordinaryOrders(cmd){
 		const template = readYaml.sync(yamlPath).template
 
 		const modulePath1 = template.default.map((directory) => path.join(dir, directory))
-		const modulePath2 = template.
+		const modulePath2 = template.custom.dir.map((directory) => path.join(dir, directory))
+		const modulePath3 = template.custom.cwd.map((directory) => path.join(cwd, directory))
+
 		// 输出默认模版
-		outputModule('默认', conf.DefaultTemplate)
+		outputModule('默认', getListOfExistTemplates(modulePath1))
 		// 输出自定义模版
-		outputModule('自定义', conf.CustomTemplate)
+		outputModule('自定义', getListOfExistTemplates(modulePath2))
+		outputModule('自定义', getListOfExistTemplates(modulePath3))
 	}
 }
 
@@ -42,21 +45,15 @@ function ordinaryOrders(cmd){
  */
 function outputModule(tagText, moduleDirectorys){
 	// 判断是否存在模版
-	if (moduleDirectorys){
+	if (moduleDirectorys.length){
 		// 遍历模版路径
-		moduleDirectorys.split(',').forEach((directory) => {
+		moduleDirectorys.forEach((module) => {
 			// 获取当前模版完整路径
-			const modulePath  = path.join(dir, directory)
+			const modulePath  = module.path
+
 			console.log(`>>> ${tagText}模版`.cyan + `「${modulePath}」`.gray)
 			// 读取目录下所有的文件并遍历
-			fs.readdirSync(modulePath).forEach((file) => {
-				// 获取当前文件完整路径
-				const pathname = path.join(modulePath, file)
-				// 判断当前是否是目录, 因页面模版都是目录形式
-				if (fs.lstatSync(pathname).isDirectory()){
-					console.log(`[模版]`.cyan + ` ${file}`)
-				}
-			})
+			module.name.forEach((file) => console.log(`[模版]`.cyan + ` ${file}`))
 		})
 	}
 }
@@ -158,7 +155,17 @@ function getListOfExistTemplates(moduleDirectorys){
 	return moduleList
 }
 
-module.exports = (option) => {
+module.exports = (cmd, name) => {
 	// 命令格式验证
-	typeof option === 'string' ? ordinaryOrders(option) : normalOrders(option)
+	!{
+		add:normalOrders,
+		ls :ordinaryOrders
+	}[cmd]()
+	// typeof option === 'string' ? ordinaryOrders(option) : normalOrders(option)
 }
+
+
+
+
+
+
