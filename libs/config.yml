@@ -1,11 +1,11 @@
 template:
-  default: 
+  default:
     - ../templates/defaults
   custom:
     dir:
       - ../templates/customize
     cwd:
-      - xxxx
-      - xxxxooo
-      - testmodule
-      - test/module
+      - temp
+      - temp12313
+      - temp2
+      - temp2/wftc

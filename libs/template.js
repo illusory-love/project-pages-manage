@@ -14,8 +14,8 @@ function getExistTemplateInformation(pathName){
 	const config = Yaml.sync(path.join(dir, `config.yml`))
 	// 优先取当前执行命令的目录
 	// 添加配制中的所有模版路径
-	const cusDirectorys = config.CustomTemplate.split(',')
-	const defDirectorys = config.DefaultTemplate.split(',')
+	const cusDirectorys = config.template.custom.dir
+	const defDirectorys = config.template.default
 
 	// 遍历获取存在的模版, 不同目录可能存在同名的模版
 	const cusTemp = cusDirectorys

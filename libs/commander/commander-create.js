@@ -44,7 +44,7 @@ function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE
 			// 获取选择项
 			const choices = objTemp.map((tmp, idx) => `「${target.name + idx}」\t ${tmp.module}`).concat(['取消'])
 			// 弹出选择列表
-			const prompt = new List({
+			const prompt = new list({
 				name: 'choiceTemplate',
 				message: `请选择您需要{0}的模版`.format(actionText),
 				choices
