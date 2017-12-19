@@ -9,7 +9,7 @@ const Confirm   = require('prompt-confirm')
 
 const { cwd, dir } = require('../constants')
 const { forEachFiles } = require('../utils')
-const templates = require('../template')
+const { filterTemplate } = require('../template')
 
 // format 方法注册
 format.extend(String.prototype)
@@ -161,39 +161,63 @@ function getListOfExistTemplates(moduleDirectorys, isLocal){
 function ordersRemove(name, option){
 	if (!name) return
 	// 获取配制信息
-	const template = readYaml.sync(yamlPath).template
+	let config = readYaml.sync(yamlPath)
+	let custom = config.template.custom
+	const isGlobal = !!option.global
+	const isDelete = !!option.delete
+	const isDeleteFiles = isGlobal || isDelete
 	// 获取需要删除的模版路径
-	const modulePath = path.join(option.global ? dir : cwd, name)
+	// console.log(JSON.stringify(custom))
+	if (!isGlobal){
+		let index = custom.cwd.indexOf(name)
+		if (index != -1){
+			custom.cwd.splice(index, 1)
+			// 更新配制文件
+			writeYaml.sync(yamlPath, config)
+			console.log(`>>> 模版目录配制「${name}」删除成功`.green)
+			// 如果不需要再继续删除文件则直接中止进程
+			isDelete || process.exit()
+		} else {
+			return console.log(`<<< 模版目录配制「${name}」不存在 >>>`.yellow)
+		}
+	}
+
 	// 获取所有存在的模版
-	const moduleList = templates(name) 
+	const moduleList = filterTemplate(isDelete ? [name] : custom[isGlobal ? 'dir' : 'cwd'], {
+		root: isGlobal ? dir : cwd,
+		name: isDelete ? '' : name
+	})
+	// 判断当前模版是否存在
+	if (!moduleList.length) 
+		return console.log(`<<< 模版目录「${name}」不存在 >>>`.yellow)
 
-
-	if (moduleList.length){
-		// 弹出确认提示
-		const propmt = new Confirm('删除后无法恢复，是否确认删除？')
-		propmt.ask(answer => {
-			if (answer) {				
-				forEachFiles(modulePath, (pathname, filename) => {
+	// 弹出确认提示
+	const propmt = new Confirm('删除后无法恢复，是否确认删除？')
+	propmt.ask(answer => {
+		if (answer) {
+			moduleList.forEach((modulepath) => {
+				forEachFiles(modulepath, (pathname, filename) => {
+					fs.removeSync(pathname)
 					console.log(`[删除]`.cyan + ` ${pathname} `)	
 				})
-			}
-		})
-	} else {
-		console.log(`<<< 模版目录「${modulePath}」不存在 >>>`.yellow)
-	}
+				// 删除模版目录
+				fs.removeSync(modulepath)
+				console.log(`[删除]`.cyan + ` ${modulepath} `)
+			})
+		}
+	})
 }
 function removeTemplate(name, option){
 
 }
 
 module.exports = (cmd, name, option) => {
-	// 命令格式验证
-	!{
+	// 根据命令执行对应的函数处理
+	({
 		add: ordersAdd,
 		ls : ordersList,
 		rm : ordersRemove
-	}[cmd](name, option)
-	// typeof option === 'string' ? ordersList(option) : ordersAdd(option)
+	}[cmd] || (() => {}))(name, option)
 }
 
 

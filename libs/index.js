@@ -36,8 +36,8 @@ program
 	.command('template <cmd> [name]')
 	.alias('t')
 	.description('可添加自定义页面模版')
-	.option('-a, --all <modulename>', '是否显示所有模版路径')
 	.option('-g, --global', '添加到全局')
+	.option('-d, --delete', '强制删除指定的模版文件')
 	.action(require('./commander/commander-template'))
 
 

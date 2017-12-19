@@ -18,16 +18,17 @@ function getExistTemplateInformation(pathName){
 	const defDirectorys = config.template.default
 
 	// 遍历获取存在的模版, 不同目录可能存在同名的模版
-	const cusTemp = cusDirectorys
-		.map((directory) => path.join(cwd, directory, pathName))
-		.filter((directory) => fs.pathExistsSync(directory))
-	const defTemp = defDirectorys
-		.map((directory) => path.join(dir, directory, pathName))
-		.filter((directory) => fs.pathExistsSync(directory))
+	const cusTemp = filterTemplate(cusDirectorys, {
+		root: cwd,
+		name: pathName
+	})
+	const defTemp = filterTemplate(defDirectorys, {
+		root: dir,
+		name: pathName
+	})
 
 	return cusTemp.concat(defTemp).map(templateInformationByPathForCallback)
 }
-
 /**
  * 获取指定路径下的模版信息
  * @param  {string} tempPath 模版路径
@@ -45,7 +46,31 @@ function templateInformationByPathForCallback(tempPath){
 	}
 }
 
+/**
+ * 筛选模版路径
+ * @param  {array}   directorys    		模版路径数组
+ * @param  {string}  options.root	  	根目录
+ * @param  {string}  options.pathname  	待查找的模版名称
+ * @param  {boolean} options.notExist 	是否仅保留存在的模版路径(def: false)
+ * @return {array}               		处理完成的模版路径
+ */
+function filterTemplate(directorys, { root, name, notExist }){
+	// 将模版路径转化为绝对路径
+	directorys = directorys.map(directory => path.join(root, directory, name))
+	// 是否仅返回存在的模版路径
+	notExist || (directorys = directorys.filter(directory => fs.pathExistsSync(directory)))
+	// 返回处理完成的模版路径数组
+	return directorys
+}
+
+
 module.exports = (name) => {
 	// 获取存在的模版信息
 	return name && getExistTemplateInformation(name)
 }
+
+module.exports.filterTemplate = filterTemplate
+
+
+
+
