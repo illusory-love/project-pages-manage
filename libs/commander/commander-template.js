@@ -30,8 +30,8 @@ function ordersList(){
 	// 输出默认模版
 	outputModule('默认', getListOfExistTemplates(modulePath1))
 	// 输出自定义模版
-	outputModule('自定义（全局）', getListOfExistTemplates(modulePath2, true))
-	outputModule('自定义（本地）', getListOfExistTemplates(modulePath3, true))
+	outputModule('自定义（全局）', getListOfExistTemplates(modulePath2))
+	outputModule('自定义（本地）', getListOfExistTemplates(modulePath3))
 }
 
 /**
@@ -48,9 +48,9 @@ function outputModule(tagText, moduleDirectorys){
 			// 获取当前模版完整路径
 			const modulePath  = module.path
 
-			console.log(`>>> ${tagText}模版`.cyan + `「${modulePath}」`.gray)
+			console.log(`>>> 模版目录「${modulePath}」`.magenta)
 			// 读取目录下所有的文件并遍历
-			module.name.length ? module.name.forEach((file) => console.log(`[模版]`.cyan + ` ${file}`)) : console.warn('<<< 暂无模版 >>>'.yellow)
+			module.name.length ? module.name.forEach((file) => console.log(`[${tagText}]`.cyan + ` ${file}`)) : console.warn('<<< 暂无模版 >>>'.yellow)
 		})
 	}
 }

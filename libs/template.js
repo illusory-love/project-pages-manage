@@ -26,6 +26,7 @@ function getExistTemplateInformation(pathName){
 		root: dir,
 		name: pathName
 	})
+	console.log(cusTemp, defTemp)
 
 	return cusTemp.concat(defTemp).map(templateInformationByPathForCallback)
 }
