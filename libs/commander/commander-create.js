@@ -23,6 +23,7 @@ const TEXTCREATE  = '创建'
 const TEXTCOVER   = '覆盖'
 const TEXTREPLACE = '替换'
 const TEXTCANCEL  = '取消'
+const TEXTRESET   = '重置'
 
 /**
  * 创建页面
@@ -34,7 +35,7 @@ const TEXTCANCEL  = '取消'
  * @param  {string}  actionText    操作文本
  * @param  {boolean} forbidLogger  禁止输出日志
  */
-function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbidLogger){
+async function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbidLogger){
 	// 当前模版路
 	let objTemp = templates(moduleName)
 
@@ -42,15 +43,26 @@ function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE
 		// 验证当前是否有多个模版
 		if (objTemp.length > 1){
 			// 获取选择项
-			const choices = objTemp.map((tmp, idx) => `「${target.name + idx}」\t ${tmp.module}`).concat(['取消'])
+			const choices = objTemp.map((tmp, idx) => `[${target.name}-${idx}] ${tmp.root}`).concat(['取消'.gray])
 			// 弹出选择列表
 			const prompt = new list({
 				name: 'choiceTemplate',
 				message: `请选择您需要{0}的模版`.format(actionText),
 				choices
 			})
-			prompt.ask(answer => {
-				console.log(answer)
+			// prompt.ask(answer => {
+			// 	if (!answer.includes('取消')){ 
+			// 		// 获取当前选择的对象
+			// 		const index = answer.match(/\[.+-(\d+)\]/)[1]
+			// 		operationModule(objTemp[index], target, actionText, forbidLogger)
+			// 	}
+			// })
+			await prompt.run().then(answer => {
+				if (!answer.includes('取消')){ 
+					// 获取当前选择的对象
+					const index = answer.match(/\[.+-(\d+)\]/)[1]
+					operationModule(objTemp[index], target, actionText, forbidLogger)
+				}
 			})
 		} else {
 			// 创建文件
@@ -81,12 +93,6 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 	forbidLogger || console.log(STRBEIGN.format(target.name, actionText))
 	// 开始复制或覆盖文件
 	try{
-		// 判断是否是替换
-		if (actionText == TEXTREPLACE){
-			// 先删除目标目录
-			DeleteProcessing(target, true)
-		}
-
 		// 获取源模版路径
 		let modulePath = objTemp.module
 		let script     = objTemp.script
@@ -97,6 +103,12 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 		if (cbResult === false){
 			console.log(STRABORT.format(target.name, actionText))
 			process.exit(0)
+		}
+		
+		// 判断是否是替换
+		if (actionText == TEXTREPLACE || actionText == TEXTRESET){
+			// 先删除目标目录
+			DeleteProcessing(target, true)
 		}
 
 		console.log(`[${actionText}]`.cyan + ` ${modulePath} => ${target.path}`)
@@ -155,9 +167,9 @@ module.exports = (pageName, option) => {
 			name: 'operation',
 			message: `当前页面已存在，请选择您进行的操作？`,
 			choices: [
-				`${TEXTCOVER}（不会对新增文件产生影响）`.cyan, 
-				`${TEXTREPLACE}（删除并新创建当前页面）`.cyan,
-				TEXTCANCEL.gray
+				TEXTCANCEL.gray,
+				`${TEXTREPLACE}`.cyan,
+				`${TEXTCOVER}`.cyan
 			]
 		});
 		// 监听选择行为

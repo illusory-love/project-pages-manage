@@ -30,9 +30,9 @@ async function ResetProcessing(target, moduleName, forbidLogger){
 	forbidLogger || console.log(STRBEIGN.format(target.name))
 	try{
 		// 删除当前页面
-		await DeleteProcessing(target, true)
+		// await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		await CreateProcessing(target, moduleName, '创建', true)
+		console.log(await CreateProcessing(target, moduleName, '重置', true))
 
 		forbidLogger || console.log(STREND.format(target.name))
 	} catch (err) {

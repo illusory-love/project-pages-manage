@@ -93,8 +93,18 @@ function ordersAdd(name, option){
 		// 添加自定义模版至全局中
 		forEachFiles(localModulePath, (pathname, filename) => {
 			const sourcePath = pathname
-			const targetPath = path.join(modulePath[0], pathname.replace(cwd, ''))
-
+			/** 
+			 * 处理复制至全局后的模版目录名称
+			 * 添加时仅保留模版的名称
+			 * 比如执行: proj t add modulepath/modulename 
+			 * 最终添加至全局的是: ./customize/modulename
+			 * 不会是: ./customize/modulepath/modulename
+			**/
+			const _module = addModuleName.split(/\/|\\/).slice(-1)[0]
+			const _path = path.join(cwd, addModuleName.replace(_module, ''))
+			const _name = pathname.replace(_path, '')
+			const targetPath = path.join(modulePath[0], _name)
+			// 复制当前文件
 			fs.copySync(sourcePath, targetPath)
 
 			console.log(`[信息]`.cyan + ` ${sourcePath} => ${targetPath}`)
@@ -206,9 +216,6 @@ function ordersRemove(name, option){
 			})
 		}
 	})
-}
-function removeTemplate(name, option){
-
 }
 
 module.exports = (cmd, name, option) => {

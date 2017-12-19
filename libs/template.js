@@ -11,13 +11,18 @@ const { cwd, dir } = require('./constants')
  */
 function getExistTemplateInformation(pathName){
 	// 获取配制信息
-	const config = Yaml.sync(path.join(dir, `config.yml`))
+	const template = Yaml.sync(path.join(dir, `config.yml`)).template
 	// 优先取当前执行命令的目录
 	// 添加配制中的所有模版路径
-	const cusDirectorys = config.template.custom.dir
-	const defDirectorys = config.template.default
+	const cusDefaultDirectorys = template.custom.dir
+	const cusDirectorys        = template.custom.cwd
+	const defDirectorys        = template.default
 
 	// 遍历获取存在的模版, 不同目录可能存在同名的模版
+	const cusDefaultTemp = filterTemplate(cusDefaultDirectorys, {
+		root: dir,
+		name: pathName
+	})
 	const cusTemp = filterTemplate(cusDirectorys, {
 		root: cwd,
 		name: pathName
@@ -26,9 +31,8 @@ function getExistTemplateInformation(pathName){
 		root: dir,
 		name: pathName
 	})
-	console.log(cusTemp, defTemp)
 
-	return cusTemp.concat(defTemp).map(templateInformationByPathForCallback)
+	return cusDefaultTemp.concat(cusTemp).concat(defTemp).map(templateInformationByPathForCallback)
 }
 /**
  * 获取指定路径下的模版信息
@@ -41,6 +45,7 @@ function templateInformationByPathForCallback(tempPath){
 	const scriptPath = path.join(tempPath, 'index.js')
 
 	return {
+		root  : tempPath,
 		module: modulePath,
 		config: fs.pathExistsSync(configPath) ? Yaml.sync(configPath) : {},
 		script: fs.pathExistsSync(scriptPath) ? require(scriptPath) : {}
