@@ -37,7 +37,7 @@ const TEXTRESET   = '重置'
  */
 async function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbidLogger){
 	// 当前模版路
-	let objTemp = templates(moduleName)
+	let objTemp = typeof moduleName == 'string' ? templates(moduleName) : moduleName
 
 	if (objTemp.length){
 		// 验证当前是否有多个模版
@@ -105,11 +105,11 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 			process.exit(0)
 		}
 		
-		// 判断是否是替换
-		if (actionText == TEXTREPLACE || actionText == TEXTRESET){
-			// 先删除目标目录
-			DeleteProcessing(target, true)
-		}
+		// // 判断是否是替换
+		// if (actionText == TEXTREPLACE || actionText == TEXTRESET){
+		// 	// 先删除目标目录
+		// 	DeleteProcessing(target, true)
+		// }
 
 		console.log(`[${actionText}]`.cyan + ` ${modulePath} => ${target.path}`)
 		// 单文件创建, 便于输出日志

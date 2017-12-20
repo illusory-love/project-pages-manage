@@ -1,7 +1,11 @@
 const fs = require('fs-extra')
 const path = require('path')
+const format  = require('string-format')
 
 const { cwd, dir } = require('./constants')
+
+// format 方法注册
+format.extend(String.prototype)
 
 /**
  * 检查待生成的文件或目录是否存在

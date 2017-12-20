@@ -2,13 +2,12 @@ const Confirm = require('prompt-confirm')
 const path    = require('path')
 const fs      = require('fs-extra')
 const colors  = require('colors')
-const format  = require('string-format')
 
 const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing }  = require('./commander-delete')
 const { CreateProcessing }  = require('./commander-create')
-// format 方法注册
-format.extend(String.prototype)
+const templates = require('../template')
+const log = require('../log')
 
 // 常量字符定义
 const STRBEIGN = `>>> 页面『{0}』正在重置...`.magenta
@@ -24,17 +23,20 @@ const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
  *                  target.name   {string}  目标页面名称
  *                  target.path   {string}  目标文件完整路径
  * @param {string}  moduleName   模版名称
- * @param {boolean} forbidLogger 禁止输出日志
+ * @param {boolean} forbid 		 禁止输出日志
  */
-async function ResetProcessing(target, moduleName, forbidLogger){
-	forbidLogger || console.log(STRBEIGN.format(target.name))
+async function ResetProcessing(target, moduleName, forbid){
+	// 处理是否允许输出日志
+	forbid || console.log(STRBEIGN.format(target.name))
 	try{
-		// 删除当前页面
-		// await DeleteProcessing(target, true)
+		// 获取当前可选模版
+		const objTemp = templates(moduleName)
+		// 当可选模版只有一个的时候可在创建前选删除已有
+		objTemp.length == 1 && await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		console.log(await CreateProcessing(target, moduleName, '重置', true))
+		await CreateProcessing(target, objTemp, '重置', true)
 
-		forbidLogger || console.log(STREND.format(target.name))
+		forbid || console.log(STREND.format(target.name))
 	} catch (err) {
 		console.error(STRFAIL.format(target.name, err))
 	}
