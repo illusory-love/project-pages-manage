@@ -2,18 +2,17 @@ const list   = require('prompt-list')
 const path   = require('path')
 const fs     = require('fs-extra')
 const colors = require('colors')
-const format = require('string-format')
 
 const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing } = require('./commander-delete')
+const { ResetProcessing } = require('./commander-reset')
 const { cwd, dir }     = require('../constants')
 const templates = require('../template')
-// format 方法注册
-format.extend(String.prototype)
+const log = require('../log')
 
 // 常量字符定义
 const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
-const STREND   = `>>> 页面『{0}』{1}完成。`.magenta
+const STREND   = `>>> 页面『{0}』{1}完成。`.green
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
 const STRNOTTMP= `>>> 模版『{0}』不存在。`.yellow
 const STRABORT = `>>> 页面『{0}』{1}行为被用户中止`.yellow
@@ -33,9 +32,9 @@ const TEXTRESET   = '重置'
  *                  target.path   {string}  目标文件完整路径
  * @param  {string}  moduleName    模版名称
  * @param  {string}  actionText    操作文本
- * @param  {boolean} forbidLogger  禁止输出日志
+ * @param  {boolean} forbid  禁止输出日志
  */
-async function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbidLogger){
+async function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbid){
 	// 当前模版路
 	let objTemp = typeof moduleName == 'string' ? templates(moduleName) : moduleName
 
@@ -50,23 +49,16 @@ async function CreateProcessing(target, moduleName = 'normal', actionText = TEXT
 				message: `请选择您需要{0}的模版`.format(actionText),
 				choices
 			})
-			// prompt.ask(answer => {
-			// 	if (!answer.includes('取消')){ 
-			// 		// 获取当前选择的对象
-			// 		const index = answer.match(/\[.+-(\d+)\]/)[1]
-			// 		operationModule(objTemp[index], target, actionText, forbidLogger)
-			// 	}
-			// })
 			await prompt.run().then(answer => {
 				if (!answer.includes('取消')){ 
 					// 获取当前选择的对象
 					const index = answer.match(/\[.+-(\d+)\]/)[1]
-					operationModule(objTemp[index], target, actionText, forbidLogger)
+					operationModule(objTemp[index], target, actionText, forbid)
 				}
 			})
 		} else {
 			// 创建文件
-			operationModule(objTemp[0], target, actionText, forbidLogger)
+			operationModule(objTemp[0], target, actionText, forbid)
 		}
 	} else {
 		// 模版不存在,输出警告直接退出
@@ -86,11 +78,13 @@ async function CreateProcessing(target, moduleName = 'normal', actionText = TEXT
  *                  target.name   {string}  目标页面名称
  *                  target.path   {string}  目标文件完整路径
  * @param  {string}  actionText    当前的操作名称
- * @param  {boolean} forbidLogger  禁止输出日志
+ * @param  {boolean} forbid  禁止输出日志
  */
-async function operationModule(objTemp, target, actionText, forbidLogger){
+async function operationModule(objTemp, target, actionText, forbid){
 	// 执行开始创建
-	forbidLogger || console.log(STRBEIGN.format(target.name, actionText))
+	log.disable(!!forbid)
+	log.info(STRBEIGN.format(target.name, actionText))
+	log.disable(false)
 	// 开始复制或覆盖文件
 	try{
 		// 获取源模版路径
@@ -101,17 +95,11 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 		const cbResult = await script.onBefore && script.onBefore('create', objTemp.module, target.path)
 		// 根据自定义脚本返回值确定是否继续操作
 		if (cbResult === false){
-			console.log(STRABORT.format(target.name, actionText))
+			log.info(STRABORT.format(target.name, actionText))
 			process.exit(0)
 		}
-		
-		// // 判断是否是替换
-		// if (actionText == TEXTREPLACE || actionText == TEXTRESET){
-		// 	// 先删除目标目录
-		// 	DeleteProcessing(target, true)
-		// }
 
-		console.log(`[${actionText}]`.cyan + ` ${modulePath} => ${target.path}`)
+		log.info(` ${modulePath} => ${target.path}`, actionText)
 		// 单文件创建, 便于输出日志
 		forEachFiles(modulePath, (pathname, file) => {
 			let sourcePath = pathname;
@@ -125,13 +113,15 @@ async function operationModule(objTemp, target, actionText, forbidLogger){
 
 			const outPath = targetPath.split('/').slice(0, -1).join('/')
 			const outFile = targetPath.split('/').slice(-1)[0]
-			console.log(`[${actionText}]`.cyan + ` ${outPath}/{${file} => ${outFile}}`)
+			log.info(` ${outPath}/{${file} => ${outFile}}`, actionText)
 		})
-		forbidLogger || console.log(STREND.format(target.name, actionText))
+		log.disable(!!forbid)
+		log.success(STREND.format(target.name, actionText))
+		log.disable(false)
 		// 操作完成后的回调
 		script.onAfter && script.onAfter('create', objTemp.module, target.path)
 	} catch (err) {
-		console.error(STRFAIL.format(target.name, actionText, err))
+		log.error(STRFAIL.format(target.name, actionText, err))
 		process.exit(0)
 	}
 }
@@ -177,7 +167,10 @@ module.exports = (pageName, option) => {
 			// 操作结果
 			const actionText = actionTextByAnswer(answer)
 			// 如果有文本, 则执行后续操作
-			actionText && CreateProcessing(exist, moduleName, actionText)
+			if(actionText == TEXTREPLACE) 
+				ResetProcessing(exist, moduleName, '替换')
+			else 
+				CreateProcessing(exist, moduleName, actionText)
 		})
 	} else {
 		// 直接创建页面

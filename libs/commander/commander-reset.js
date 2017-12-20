@@ -11,7 +11,7 @@ const log = require('../log')
 
 // 常量字符定义
 const STRBEIGN = `>>> 页面『{0}』正在重置...`.magenta
-const STREND   = `>>> 页面『{0}』重置完成。`.magenta
+const STREND   = `>>> 页面『{0}』重置完成。`.green
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
 
@@ -23,22 +23,24 @@ const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
  *                  target.name   {string}  目标页面名称
  *                  target.path   {string}  目标文件完整路径
  * @param {string}  moduleName   模版名称
- * @param {boolean} forbid 		 禁止输出日志
+ * @param {string}  actionText   操作标签文案
+ * @param {boolean} forbid 		 禁止输出日志 (默认: false)
  */
-async function ResetProcessing(target, moduleName, forbid){
+async function ResetProcessing(target, moduleName, actionText = '重置', forbid){
 	// 处理是否允许输出日志
-	forbid || console.log(STRBEIGN.format(target.name))
+	log.disable(!!forbid)
+	log.info(STRBEIGN.format(target.name))
 	try{
 		// 获取当前可选模版
 		const objTemp = templates(moduleName)
 		// 当可选模版只有一个的时候可在创建前选删除已有
 		objTemp.length == 1 && await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		await CreateProcessing(target, objTemp, '重置', true)
+		await CreateProcessing(target, objTemp, actionText, true)
 
-		forbid || console.log(STREND.format(target.name))
+		log.success(STREND.format(target.name))
 	} catch (err) {
-		console.error(STRFAIL.format(target.name, err))
+		log.error(STRFAIL.format(target.name, err))
 	}
 }
 
@@ -48,7 +50,7 @@ module.exports = (pageName, option) => {
 
 	// 判断页面是否存在 
 	if (!exist.result) 
-		return console.warn(STRNOT.format(pageName))
+		return log.warn(STRNOT.format(pageName))
 
 	// 提示确认是否删除 
 	const propmt = new Confirm(`您确定要重置此页面吗？`)
