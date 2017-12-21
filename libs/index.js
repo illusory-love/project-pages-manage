@@ -46,7 +46,10 @@ program
 	.action(require('./commander/commander-template'))
 
 program
-	.command('set <cmd> <value>')
+	.command('set <type> <value>')
+	.alias('s')
+	.description('对配制文件进行修改')
+	.action(require('./commander/commander-set'))
 
 
 program.parse(process.argv)

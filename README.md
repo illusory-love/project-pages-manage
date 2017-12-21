@@ -59,3 +59,11 @@ $ proj r pagename -t module
 
 ![](./doc/images/01.png)
 
+6. ##### 修改默认配制项
+
+> 基本命令: proj set config key=value
+
+目前`config`仅有一个配制项允许修改`module=xcx`
+    - module: 在创建页面时的默认模版
+
+
