@@ -13,7 +13,7 @@ const log = require('../log')
 
 
 // 配制文件路径
-const yamlPath = path.join(dir, `config.yml`)
+const yamlPath = path.join(dir, `./config/config.yml`)
 
 // ls命令 列出目前所有的默认及自定义模版
 function ordersList(){
@@ -90,7 +90,7 @@ async function ordersAdd(name, option){
 		}
 		
 		// 删除当前目录
-		fs.removeSync(modulePath[0])
+		fs.removeSync(path.join(modulePath[0], targetName))
 		// 添加自定义模版至全局中
 		forEachFiles(localModulePath, (pathname, filename) => {
 			const sourcePath = pathname

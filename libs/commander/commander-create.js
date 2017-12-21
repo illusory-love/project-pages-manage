@@ -25,7 +25,7 @@ const TEXTCANCEL  = '取消'
 const TEXTRESET   = '重置'
 
 // 配制文件路径
-const yamlConfig = readYaml.sync(path.join(dir, `config.yml`))
+const yamlConfig = readYaml.sync(path.join(dir, `./config/config.yml`))
 const defModule  = yamlConfig.default.module
 
 /**
@@ -42,7 +42,7 @@ const defModule  = yamlConfig.default.module
  */
 async function CreateProcessing(target, moduleName = defModule, { actionText, forbid, onBefore } = { actionText: TEXTCREATE }){
 	// 当前模版路
-	let objTemp = typeof moduleName == 'string' ? templates(moduleName) : moduleName
+	let objTemp = templates(moduleName)
 	if (objTemp.length){
 		// 验证当前是否有多个模版
 		if (objTemp.length > 1){
@@ -58,7 +58,7 @@ async function CreateProcessing(target, moduleName = defModule, { actionText, fo
 				if (!answer.includes('取消')){
 					// 获取当前选择的对象
 					const index = answer.match(/\[.+-(\d+)\]/)[1]
-					operationModule(objTemp[index], target, { actionText, forbid, onBefore })
+					operationModule(objTemp[index], target, { actionText, forbid, onBefore, tempIndex: index })
 				}
 			})
 		} else {
@@ -86,12 +86,13 @@ async function CreateProcessing(target, moduleName = defModule, { actionText, fo
  * @param  {string}   option.actionText 当前的操作名称
  * @param  {boolean}  option.forbid     禁止输出日志
  * @param  {function} option.onBefore   创建前的回调
+ * @param  {number}   tempIndex 当前选择的模版索引
  */
-async function operationModule(objTemp, target, { actionText, forbid, onBefore }){
-	// 执行开始创建
-	log.disable(!!forbid)
-	log.info(STRBEIGN.format(target.name, actionText))
-	log.disable(false)
+async function operationModule(objTemp, target, { actionText, forbid, onBefore, tempIndex = 0 }){
+	// // 执行开始创建
+	// log.disable(!!forbid)
+	// log.info(STRBEIGN.format(target.name, actionText))
+	// log.disable(false)
 	// 开始复制或覆盖文件
 	try{
 		// 获取源模版路径
@@ -99,18 +100,29 @@ async function operationModule(objTemp, target, { actionText, forbid, onBefore }
 		let script     = objTemp.script
 		let config     = objTemp.config
 		const reg = /\/|\\/
-		// 获取模块脚本可能存在的监听结果
-		const promiseCallbcak = script.onBefore ? script.onBefore('create', modulePath, target.path, config) : Promise.resolve()
-		
-		// 根据模版脚本返回值确定是否继续操作
-		if (await promiseCallbcak === false){
-			// 表示脚本不允许继续往下执行了
-			log.warn(STRABORT.format(target.name, actionText))
-			process.exit(0)
+		const params = {
+			modulePath, 
+			targetPath: target.path, 
+			config
+		}
+
+		if (!forbid){
+			log.info(STRBEIGN.format(target.name, actionText))
+			// 获取模块脚本可能存在的监听结果
+			const promiseCallbcak = script.onBefore ? script.onBefore('create', params) : Promise.resolve()
+			
+			// 根据模版脚本返回值确定是否继续操作
+			if (await promiseCallbcak === false){
+				// 表示脚本不允许继续往下执行了
+				log.warn(STRABORT.format(target.name, actionText))
+				process.exit(0)
+			}
 		}
 
 		// 在调用此方法时执行创建行为之前的回调
-		onBefore && onBefore()
+		if (onBefore){
+			await onBefore()
+		}
 
 		// 正常流程, 开始创建文件
 		log.info(` ${modulePath} => ${target.path}`, actionText)
@@ -140,8 +152,15 @@ async function operationModule(objTemp, target, { actionText, forbid, onBefore }
 		log.disable(!!forbid)
 		log.success(STREND.format(target.name, actionText))
 		log.disable(false)
+		// 创建完页面后，添加页面路由映射
+		// console.log(modulePath, objTemp)
+		moduleName = objTemp.root.match(/[^\\|\/]+$/)[0]
+		templates.modulePage.set(target.path, [moduleName, tempIndex])
+
 		// 操作完成后的回调
-		script.onAfter && script.onAfter('create', modulePath, target.path, config)
+		if (!forbid){
+			script.onAfter && script.onAfter('create', params)
+		}
 	} catch (err) {
 		log.error(STRFAIL.format(target.name, actionText, err))
 		process.exit(0)

@@ -1,8 +1,12 @@
 const path = require('path')
 const fs   = require('fs-extra')
 const Yaml = require('read-yaml')
+const write = require('write-yaml')
 
 const { cwd, dir } = require('./constants')
+
+const pathConfig = path.join(dir, `./config/config.yml`)
+const pathModule = path.join(dir, `./config/modulepage.yml`)
 
 /**
  * 获取指定名称的所有模版信息
@@ -11,7 +15,7 @@ const { cwd, dir } = require('./constants')
  */
 function getExistTemplateInformation(pathName){
 	// 获取配制信息
-	const template = Yaml.sync(path.join(dir, `config.yml`)).template
+	const template = Yaml.sync(pathConfig).template
 	// 优先取当前执行命令的目录
 	// 添加配制中的所有模版路径
 	const cusDefaultDirectorys = template.custom.dir
@@ -70,12 +74,40 @@ function filterTemplate(directorys, { root, name, notExist }){
 }
 
 
+// 页面模版映射管理 
+const modulePage = {
+	set: function(path, module){
+		// 获取模版映射配制, 每次调用是重新获取以保证是最新的
+		let mapping = Yaml.sync(pathModule) || {}
+		// 添加映射
+		mapping[path] = module
+		// 更新配制
+		write.sync(pathModule, mapping)
+	},
+	get: function(path){
+		// 获取模版映射配制, 每次调用是重新获取以保证是最新的
+		let mapping = Yaml.sync(pathModule) || {}
+		// 获取映射
+		return mapping[path]
+	},
+	del: function(path){
+		// 获取模版映射配制, 每次调用是重新获取以保证是最新的
+		let mapping = Yaml.sync(pathModule) || {}
+		// 删除映射
+		delete mapping[path]
+		// 更新配制
+		write.sync(pathModule, mapping)
+	}
+}
+
+
 module.exports = (name) => {
 	// 获取存在的模版信息
 	return name && getExistTemplateInformation(name)
 }
 
 module.exports.filterTemplate = filterTemplate
+module.exports.modulePage = modulePage
 
 
 

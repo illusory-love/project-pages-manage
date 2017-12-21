@@ -13,6 +13,7 @@ const log = require('../log')
 const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
 const STREND   = `>>> 页面『{0}』{1}完成。`.green
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
+const STRABORT = `>>> 页面『{0}』{1}行为被模版脚本 onBefore 中止`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
 
 
@@ -30,19 +31,47 @@ async function ResetProcessing(target, moduleName, actionText = '重置', forbid
 	// 处理是否允许输出日志
 	log.disable(!!forbid)
 	log.info(STRBEIGN.format(target.name, actionText))
+	log.disable(false)
 	try{
 		// 获取当前可选模版
-		const objTemp = templates(moduleName)
+		let objTemp
+		let params
+		if (!forbid){
+			// 获取当前需要删除的页面的模版名称
+			const modulePage = templates.modulePage.get(target.path)
+			// 获取模版对象
+			objTemp = templates(modulePage[0])[modulePage[1]]
+			params = {
+				modulePath: objTemp.module, 
+				targetPath: target.path, 
+				config    : objTemp.config 
+			}
+			// 获取监听执行结果
+			const promiseCallbcak = objTemp.script.onBefore ? objTemp.script.onBefore('reset', params) : Promise.resolve()
+			// 根据模版脚本返回值确定是否继续操作
+			if (await promiseCallbcak === false){
+				// 表示脚本不允许继续往下执行了
+				log.warn(STRABORT.format(target.name))
+				process.exit(0)
+			}
+		}
 		// 当可选模版只有一个的时候可在创建前选删除已有
 		// objTemp.length == 1 && await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		await CreateProcessing(target, objTemp, { 
+		await CreateProcessing(target, moduleName, { 
 			actionText, 
 			forbid  : true,
 			onBefore: () => DeleteProcessing(target, true)
 		})
 
+		log.disable(!!forbid)
 		log.success(STREND.format(target.name, actionText))
+		log.disable(false)
+
+		// 操作完成后的回调
+		if (!forbid){
+			objTemp.script.onAfter && objTemp.script.onAfter('reset', params)
+		}
 	} catch (err) {
 		log.error(STRFAIL.format(target.name, actionText, err))
 	}

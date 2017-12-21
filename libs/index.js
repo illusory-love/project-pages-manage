@@ -4,7 +4,7 @@ const path     = require('path')
 const readYaml = require('read-yaml')
 
 // 配制文件路径
-const yamlConfig    = readYaml.sync(path.join(__dirname, `config.yml`))
+const yamlConfig    = readYaml.sync(path.join(__dirname, `./config/config.yml`))
 const defaultModule = yamlConfig.default.module
 
 program
