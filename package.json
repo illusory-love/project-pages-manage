@@ -28,6 +28,7 @@
     "prompt-list": "^3.1.1",
     "read-yaml": "^1.1.0",
     "string-format": "^0.5.0",
+    "write-json": "^2.0.0",
     "write-yaml": "^1.0.0",
     "yargs": "^10.0.3"
   }
