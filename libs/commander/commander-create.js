@@ -98,6 +98,7 @@ async function operationModule(objTemp, target, { actionText, forbid, onBefore }
 		let modulePath = objTemp.module
 		let script     = objTemp.script
 		let config     = objTemp.config
+		const reg = /\/|\\/
 		// 获取模块脚本可能存在的监听结果
 		const promiseCallbcak = script.onBefore ? script.onBefore('create', modulePath, target.path, config) : Promise.resolve()
 		
@@ -118,16 +119,23 @@ async function operationModule(objTemp, target, { actionText, forbid, onBefore }
 		forEachFiles(modulePath, (pathname, file) => {
 			let sourcePath = pathname;
 			let targetPath = path.join(target.path, pathname.replace(objTemp.module, ''));
+
 			// 是否需要重命名
 			if (config.rename) {
-				targetPath = targetPath.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${target.name}$1`)
+				const targetName = target.name.split(reg).slice(-1)[0]
+				targetPath = targetPath.replace(/[a-z0-9]+(\.[a-z0-9]+$)/i, `${targetName}$1`)
 			}
+
 			// 创建或覆盖文件
 			fs.copySync(sourcePath, targetPath)
 
-			const outPath = targetPath.split('/').slice(0, -1).join('/')
-			const outFile = targetPath.split('/').slice(-1)[0]
-			log.info(` ${outPath}/{${file} => ${outFile}}`, actionText)
+			if (config.rename){
+				const outPath = targetPath.split(reg).slice(0, -1).join('/')
+				const outFile = targetPath.split(reg).slice(-1)[0]
+				log.info(` ${outPath}/{${file} => ${outFile}}`, actionText)
+			} else {
+				log.info(`${sourcePath} => ${targetPath}`)
+			}
 		})
 		log.disable(!!forbid)
 		log.success(STREND.format(target.name, actionText))
