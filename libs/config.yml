@@ -1,3 +1,5 @@
+default: 
+  module: xcx
 template:
   default:
     - ../templates/defaults

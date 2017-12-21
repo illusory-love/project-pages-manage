@@ -1,7 +1,7 @@
-exports.onBefore = (cmd, modulePath, targetPath) => {
-
+exports.onBefore = async (cmd, modulePath, targetPath) => {
+	// console.log('onBefore:', cmd, modulePath, targetPath)
 }
 
-exports.onAfter = (cmd, modulePath, targetPath) => {
-	
+exports.onAfter = async (cmd, modulePath, targetPath) => {
+	// console.log('onAfter:', cmd, modulePath, targetPath)
 }

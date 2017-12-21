@@ -2,10 +2,10 @@ const list   = require('prompt-list')
 const path   = require('path')
 const fs     = require('fs-extra')
 const colors = require('colors')
+const readYaml  = require('read-yaml')
 
 const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing } = require('./commander-delete')
-// const { ResetProcessing } = require('./commander-reset')
 const { cwd, dir }     = require('../constants')
 const templates = require('../template')
 const log = require('../log')
@@ -15,7 +15,7 @@ const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
 const STREND   = `>>> 页面『{0}』{1}完成。`.green
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
 const STRNOTTMP= `>>> 模版『{0}』不存在。`.yellow
-const STRABORT = `>>> 页面『{0}』{1}行为被用户中止`.yellow
+const STRABORT = `>>> 页面『{0}』{1}行为被模版脚本 onBefore 中止`.yellow
 const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
 
 const TEXTCREATE  = '创建'
@@ -23,6 +23,10 @@ const TEXTCOVER   = '覆盖'
 const TEXTREPLACE = '替换'
 const TEXTCANCEL  = '取消'
 const TEXTRESET   = '重置'
+
+// 配制文件路径
+const yamlConfig = readYaml.sync(path.join(dir, `config.yml`))
+const defModule  = yamlConfig.default.module
 
 /**
  * 创建页面
@@ -34,7 +38,7 @@ const TEXTRESET   = '重置'
  * @param  {string}  actionText    操作文本
  * @param  {boolean} forbid  禁止输出日志
  */
-async function CreateProcessing(target, moduleName = 'normal', actionText = TEXTCREATE, forbid){
+async function CreateProcessing(target, moduleName = defModule, actionText = TEXTCREATE, forbid){
 	// 当前模版路
 	let objTemp = typeof moduleName == 'string' ? templates(moduleName) : moduleName
 
@@ -94,10 +98,10 @@ async function operationModule(objTemp, target, actionText, forbid){
 		let script     = objTemp.script
 		let config     = objTemp.config
 		// 操作前的回调
-		const cbResult = await script.onBefore && script.onBefore('create', objTemp.module, target.path)
+		const callback = await script.onBefore && script.onBefore('create', modulePath, target.path, config)
 		// 根据自定义脚本返回值确定是否继续操作
-		if (cbResult === false){
-			log.info(STRABORT.format(target.name, actionText))
+		if (callback === false){
+			log.warn(STRABORT.format(target.name, actionText))
 			process.exit(0)
 		}
 
@@ -121,7 +125,7 @@ async function operationModule(objTemp, target, actionText, forbid){
 		log.success(STREND.format(target.name, actionText))
 		log.disable(false)
 		// 操作完成后的回调
-		script.onAfter && script.onAfter('create', objTemp.module, target.path)
+		script.onAfter && script.onAfter('create', modulePath, target.path, config)
 	} catch (err) {
 		log.error(STRFAIL.format(target.name, actionText, err))
 		process.exit(0)
@@ -146,12 +150,11 @@ function actionTextByAnswer(answer){
 }
 
 module.exports = (pageName, option) => {
-	// console.console.log('module into:', pageName, option)
-
 	// 获取模版名称
 	const moduleName = option.template;	
 	// 获取当前文件信息
 	const exist = FileExist(pageName);
+	// log.info('moduleName:'+ moduleName)
 	// 判断当前页面是否已存在
 	if (exist.result){
 		// 弹出确认覆盖提示

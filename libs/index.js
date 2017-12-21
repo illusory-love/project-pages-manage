@@ -1,6 +1,11 @@
-const program = require('commander')
-const appInfo = require('../package.json')
+const program  = require('commander')
+const appInfo  = require('../package.json')
+const path     = require('path')
+const readYaml = require('read-yaml')
 
+// 配制文件路径
+const yamlConfig    = readYaml.sync(path.join(__dirname, `config.yml`))
+const defaultModule = yamlConfig.default.module
 
 program
 	.allowUnknownOption()
@@ -13,7 +18,7 @@ program
 	.command('create <page>')
 	.alias('c')
 	.description('创建页面（如未指定模版，则以默认模版进行创建）')
-	.option('-t, --template <pagename>', '指定页面模版名称', 'normal')
+	.option('-t, --template <pagename>', '指定页面模版名称', defaultModule)
 	.action(require('./commander/commander-create'))
 
 // 删除页面
@@ -28,7 +33,7 @@ program
 	.command('reset <page>')
 	.alias('r')
 	.description('重置页面（如未指定模版，则以默认模版进行重置）')
-	.option('-t, --template <pagename>', '指定页面模版名称', 'normal')
+	.option('-t, --template <pagename>', '指定页面模版名称', defaultModule)
 	.action(require('./commander/commander-reset'))
 
 // 自定义页面模版管理
