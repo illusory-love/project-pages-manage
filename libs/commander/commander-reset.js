@@ -10,10 +10,10 @@ const templates = require('../template')
 const log = require('../log')
 
 // 常量字符定义
-const STRBEIGN = `>>> 页面『{0}』正在重置...`.magenta
-const STREND   = `>>> 页面『{0}』重置完成。`.green
+const STRBEIGN = `>>> 页面『{0}』正在{1}...`.magenta
+const STREND   = `>>> 页面『{0}』{1}完成。`.green
 const STRNOT   = `>>> 页面『{0}』不存在。`.yellow
-const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
+const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
 
 
 /**
@@ -29,18 +29,22 @@ const STRFAIL  = `<<< error >>> 页面『{0}』重置失败 \n {1}`.red
 async function ResetProcessing(target, moduleName, actionText = '重置', forbid){
 	// 处理是否允许输出日志
 	log.disable(!!forbid)
-	log.info(STRBEIGN.format(target.name))
+	log.info(STRBEIGN.format(target.name, actionText))
 	try{
 		// 获取当前可选模版
 		const objTemp = templates(moduleName)
 		// 当可选模版只有一个的时候可在创建前选删除已有
-		objTemp.length == 1 && await DeleteProcessing(target, true)
+		// objTemp.length == 1 && await DeleteProcessing(target, true)
 		// 重新创建当前页面
-		await CreateProcessing(target, objTemp, actionText, true)
+		await CreateProcessing(target, objTemp, { 
+			actionText, 
+			forbid  : true,
+			onBefore: () => DeleteProcessing(target, true)
+		})
 
-		log.success(STREND.format(target.name))
+		log.success(STREND.format(target.name, actionText))
 	} catch (err) {
-		log.error(STRFAIL.format(target.name, err))
+		log.error(STRFAIL.format(target.name, actionText, err))
 	}
 }
 

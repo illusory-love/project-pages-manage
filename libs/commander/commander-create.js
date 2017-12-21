@@ -30,18 +30,19 @@ const defModule  = yamlConfig.default.module
 
 /**
  * 创建页面
- * @param  {string} target  目标创建页信息对象
- *                  target.result {boolean} 目标文件是否存在
- *                  target.name   {string}  目标页面名称
- *                  target.path   {string}  目标文件完整路径
- * @param  {string}  moduleName    模版名称
- * @param  {string}  actionText    操作文本
- * @param  {boolean} forbid  禁止输出日志
+ * @param  {string}   target  目标创建页信息对象
+ *                    target.result {boolean} 目标文件是否存在
+ *                    target.name   {string}  目标页面名称
+ *                    target.path   {string}  目标文件完整路径
+ * @param  {string}   moduleName    模版名称
+ * @param  {object}   option  配制项
+ * @param  {string}   option.actionText 当前的操作名称
+ * @param  {boolean}  option.forbid     禁止输出日志
+ * @param  {function} option.onBefore   创建前的回调
  */
-async function CreateProcessing(target, moduleName = defModule, actionText = TEXTCREATE, forbid){
+async function CreateProcessing(target, moduleName = defModule, { actionText, forbid, onBefore } = { actionText: TEXTCREATE }){
 	// 当前模版路
 	let objTemp = typeof moduleName == 'string' ? templates(moduleName) : moduleName
-
 	if (objTemp.length){
 		// 验证当前是否有多个模版
 		if (objTemp.length > 1){
@@ -53,18 +54,16 @@ async function CreateProcessing(target, moduleName = defModule, actionText = TEX
 				message: `请选择您需要{0}的模版`.format(actionText),
 				choices
 			})
-			await prompt.run().then(async answer => {
-				if (!answer.includes('取消')){ 
-					// 重新创建前先删除 
-					await DeleteProcessing(target, true)
+			await prompt.run().then(answer => {
+				if (!answer.includes('取消')){
 					// 获取当前选择的对象
 					const index = answer.match(/\[.+-(\d+)\]/)[1]
-					operationModule(objTemp[index], target, actionText, forbid)
+					operationModule(objTemp[index], target, { actionText, forbid, onBefore })
 				}
 			})
 		} else {
 			// 创建文件
-			operationModule(objTemp[0], target, actionText, forbid)
+			operationModule(objTemp[0], target, { actionText, forbid, onBefore })
 		}
 	} else {
 		// 模版不存在,输出警告直接退出
@@ -75,18 +74,20 @@ async function CreateProcessing(target, moduleName = defModule, actionText = TEX
 
 /**
  * 根据指定的模版生成页面
- * @param  {object} objTemp       模版信息对象
- *                  objTemp.module {string} 模版名称
- *                  objTemp.config {object} 模版配置信息
- *                  objTemp.script {object} 模版自定义脚本
- * @param  {string} target  目标创建页信息对象
- *                  target.result {boolean} 目标文件是否存在
- *                  target.name   {string}  目标页面名称
- *                  target.path   {string}  目标文件完整路径
- * @param  {string}  actionText    当前的操作名称
- * @param  {boolean} forbid  禁止输出日志
+ * @param  {object}   objTemp       模版信息对象
+ *                    objTemp.module {string} 模版名称
+ *                    objTemp.config {object} 模版配置信息
+ *                    objTemp.script {object} 模版自定义脚本
+ * @param  {string}   target  目标创建页信息对象
+ *                    target.result {boolean} 目标文件是否存在
+ *                    target.name   {string}  目标页面名称
+ *                    target.path   {string}  目标文件完整路径
+ * @param  {object}   option  配制项
+ * @param  {string}   option.actionText 当前的操作名称
+ * @param  {boolean}  option.forbid     禁止输出日志
+ * @param  {function} option.onBefore   创建前的回调
  */
-async function operationModule(objTemp, target, actionText, forbid){
+async function operationModule(objTemp, target, { actionText, forbid, onBefore }){
 	// 执行开始创建
 	log.disable(!!forbid)
 	log.info(STRBEIGN.format(target.name, actionText))
@@ -97,15 +98,22 @@ async function operationModule(objTemp, target, actionText, forbid){
 		let modulePath = objTemp.module
 		let script     = objTemp.script
 		let config     = objTemp.config
-		// 操作前的回调
-		const callback = await script.onBefore && script.onBefore('create', modulePath, target.path, config)
-		// 根据自定义脚本返回值确定是否继续操作
-		if (callback === false){
+		// 获取模块脚本可能存在的监听结果
+		const promiseCallbcak = script.onBefore ? script.onBefore('create', modulePath, target.path, config) : Promise.resolve()
+		
+		// 根据模版脚本返回值确定是否继续操作
+		if (await promiseCallbcak === false){
+			// 表示脚本不允许继续往下执行了
 			log.warn(STRABORT.format(target.name, actionText))
 			process.exit(0)
 		}
 
+		// 在调用此方法时执行创建行为之前的回调
+		onBefore && onBefore()
+
+		// 正常流程, 开始创建文件
 		log.info(` ${modulePath} => ${target.path}`, actionText)
+
 		// 单文件创建, 便于输出日志
 		forEachFiles(modulePath, (pathname, file) => {
 			let sourcePath = pathname;
@@ -179,11 +187,11 @@ module.exports = (pageName, option) => {
 				// 放在外面引用会在加载时出现循环引用导致报错, 因此只有使用时才引用
 				require('./commander-reset').ResetProcessing(exist, moduleName, '替换')
 			else 
-				CreateProcessing(exist, moduleName, actionText)
+				CreateProcessing(exist, moduleName, { actionText } )
 		})
 	} else {
 		// 直接创建页面
-		CreateProcessing(exist, moduleName, TEXTCREATE);
+		CreateProcessing(exist, moduleName, { actionText: TEXTCREATE });
 	}
 }
 

@@ -83,7 +83,8 @@ async function ordersAdd(name, option){
 
 		// 遍历模版, 判断当前模版是否已存在
 		// 将二维数组转成一维数组
-		if ([].concat.apply([], moduleList.map((module) => module.name)).includes(addModuleName)){
+		const targetName = addModuleName.split(/\/|\\/).slice(-1)[0]
+		if ([].concat.apply([], moduleList.map((module) => module.name)).includes(targetName)){
 			const prompt = new Confirm('已存在同名模版，是否替换？')
 			await prompt.run().then(answer => answer || process.exit())
 		}

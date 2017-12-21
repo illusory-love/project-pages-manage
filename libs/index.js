@@ -45,5 +45,8 @@ program
 	.option('-d, --delete', '强制删除指定的模版文件')
 	.action(require('./commander/commander-template'))
 
+program
+	.command('set <cmd> <value>')
+
 
 program.parse(process.argv)

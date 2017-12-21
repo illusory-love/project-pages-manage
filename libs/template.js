@@ -40,7 +40,7 @@ function getExistTemplateInformation(pathName){
  */
 function templateInformationByPathForCallback(tempPath){
 	// 获取指定文件完整路径路径
-	const modulePath = path.join(tempPath, 'module')
+	const modulePath = path.join(tempPath, 'pages')
 	const configPath = path.join(tempPath, 'config.yml')
 	const scriptPath = path.join(tempPath, 'index.js')
 
