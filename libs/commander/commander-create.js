@@ -5,7 +5,7 @@ const colors = require('colors')
 
 const { FileExist, forEachFiles } = require('../utils')
 const { DeleteProcessing } = require('./commander-delete')
-const { ResetProcessing } = require('./commander-reset')
+// const { ResetProcessing } = require('./commander-reset')
 const { cwd, dir }     = require('../constants')
 const templates = require('../template')
 const log = require('../log')
@@ -49,8 +49,10 @@ async function CreateProcessing(target, moduleName = 'normal', actionText = TEXT
 				message: `请选择您需要{0}的模版`.format(actionText),
 				choices
 			})
-			await prompt.run().then(answer => {
+			await prompt.run().then(async answer => {
 				if (!answer.includes('取消')){ 
+					// 重新创建前先删除 
+					await DeleteProcessing(target, true)
 					// 获取当前选择的对象
 					const index = answer.match(/\[.+-(\d+)\]/)[1]
 					operationModule(objTemp[index], target, actionText, forbid)
@@ -62,7 +64,7 @@ async function CreateProcessing(target, moduleName = 'normal', actionText = TEXT
 		}
 	} else {
 		// 模版不存在,输出警告直接退出
-		console.warn(STRNOTTMP.format(moduleName))
+		log.warn(STRNOTTMP.format(moduleName))
 		process.exit(0)
 	}
 }
@@ -166,9 +168,13 @@ module.exports = (pageName, option) => {
 		prompt.ask((answer) => {
 			// 操作结果
 			const actionText = actionTextByAnswer(answer)
+
+			if (!actionText) return
+
 			// 如果有文本, 则执行后续操作
-			if(actionText == TEXTREPLACE) 
-				ResetProcessing(exist, moduleName, '替换')
+			if(actionText == TEXTREPLACE)
+				// 放在外面引用会在加载时出现循环引用导致报错, 因此只有使用时才引用
+				require('./commander-reset').ResetProcessing(exist, moduleName, '替换')
 			else 
 				CreateProcessing(exist, moduleName, actionText)
 		})

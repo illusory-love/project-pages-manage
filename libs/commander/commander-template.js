@@ -3,16 +3,14 @@ const fs        = require('fs-extra')
 const readYaml  = require('read-yaml')
 const writeYaml = require('write-yaml')
 const colors    = require('colors')
-const format    = require('string-format')
 const Confirm   = require('prompt-confirm')
 
 
 const { cwd, dir } = require('../constants')
 const { forEachFiles } = require('../utils')
 const { filterTemplate } = require('../template')
+const log = require('../log')
 
-// format 方法注册
-format.extend(String.prototype)
 
 // 配制文件路径
 const yamlPath = path.join(dir, `config.yml`)
@@ -48,9 +46,9 @@ function outputModule(tagText, moduleDirectorys){
 			// 获取当前模版完整路径
 			const modulePath  = module.path
 
-			console.log(`>>> 模版目录「${modulePath}」`.magenta)
+			log.info(` ${modulePath}`.magenta, '模版目录')
 			// 读取目录下所有的文件并遍历
-			module.name.length ? module.name.forEach((file) => console.log(`[${tagText}]`.cyan + ` ${file}`)) : console.warn('<<< 暂无模版 >>>'.yellow)
+			module.name.length ? module.name.forEach((file) => log.info(` ${file}`, tagText)) : log.warn('<<< 暂无模版 >>>'.yellow)
 		})
 	}
 }
@@ -60,7 +58,7 @@ function outputModule(tagText, moduleDirectorys){
  * @param {string} name   添加的模版名称或路径
  * @param {object} option 二级命令
  */
-function ordersAdd(name, option){
+async function ordersAdd(name, option){
 
 	// 获取需要添加的模版名称
 	const addModuleName = name;
@@ -75,7 +73,7 @@ function ordersAdd(name, option){
 		const localModulePath = path.join(cwd, addModuleName)
 
 		if (!fs.existsSync(localModulePath)){
-			console.error(`[错误]`.cyan + ` 源页面模版「${addModuleName}」不存在`.red)
+			log.error(` 源页面模版「${addModuleName}」不存在`.red)
 			process.exit(0)
 		}
 
@@ -86,10 +84,12 @@ function ordersAdd(name, option){
 		// 遍历模版, 判断当前模版是否已存在
 		// 将二维数组转成一维数组
 		if ([].concat.apply([], moduleList.map((module) => module.name)).includes(addModuleName)){
-			console.warn(`[警告]`.cyan + ` 已存在同名模版`.yellow)
-			process.exit(0)
+			const prompt = new Confirm('已存在同名模版，是否替换？')
+			await prompt.run().then(answer => answer || process.exit())
 		}
 		
+		// 删除当前目录
+		fs.removeSync(modulePath[0])
 		// 添加自定义模版至全局中
 		forEachFiles(localModulePath, (pathname, filename) => {
 			const sourcePath = pathname
@@ -107,21 +107,22 @@ function ordersAdd(name, option){
 			// 复制当前文件
 			fs.copySync(sourcePath, targetPath)
 
-			console.log(`[信息]`.cyan + ` ${sourcePath} => ${targetPath}`)
+			log.info(` ${sourcePath} => ${targetPath}`)
 		})
+		log.success(` 模版「${addModuleName}」添加成功`.green)
 	} else {
 		// 添加本地模版目录,以命令执行
 		const cwd = conf.template.custom.cwd
 
 		if (cwd.includes(addModuleName)){
-			console.warn(`模版目录「${addModuleName}」已存在`.yellow)
+			log.warn(`模版目录「${addModuleName}」已存在`.yellow)
 			process.exit(0)
 		}
 		
 		cwd.push(addModuleName)
 		writeYaml.sync(yamlPath, conf)
 
-		console.log(`[info]`.cyan + ` 模版目录「${addModuleName}」添加成功`.green)
+		log.success(` 模版目录「${addModuleName}」添加成功`.green)
 	}
 }
 
@@ -184,11 +185,11 @@ function ordersRemove(name, option){
 			custom.cwd.splice(index, 1)
 			// 更新配制文件
 			writeYaml.sync(yamlPath, config)
-			console.log(`>>> 模版目录配制「${name}」删除成功`.green)
+			log.info(`>>> 模版目录配制「${name}」删除成功`.green)
 			// 如果不需要再继续删除文件则直接中止进程
 			isDelete || process.exit()
 		} else {
-			return console.log(`<<< 模版目录配制「${name}」不存在 >>>`.yellow)
+			return log.warn(`<<< 模版目录配制「${name}」不存在 >>>`.yellow)
 		}
 	}
 
@@ -199,7 +200,7 @@ function ordersRemove(name, option){
 	})
 	// 判断当前模版是否存在
 	if (!moduleList.length) 
-		return console.log(`<<< 模版目录「${name}」不存在 >>>`.yellow)
+		return log.warn(`<<< 模版目录「${name}」不存在 >>>`.yellow)
 
 	// 弹出确认提示
 	const propmt = new Confirm('删除后无法恢复，是否确认删除？')
@@ -208,12 +209,13 @@ function ordersRemove(name, option){
 			moduleList.forEach((modulepath) => {
 				forEachFiles(modulepath, (pathname, filename) => {
 					fs.removeSync(pathname)
-					console.log(`[删除]`.cyan + ` ${pathname} `)	
+					log.info(` ${pathname} `, '删除')	
 				})
 				// 删除模版目录
 				fs.removeSync(modulepath)
-				console.log(`[删除]`.cyan + ` ${modulepath} `)
+				log.info(` ${modulepath} `, '删除')
 			})
+			log.success(` 模版目录「${name}」删除完成`.green)
 		}
 	})
 }
