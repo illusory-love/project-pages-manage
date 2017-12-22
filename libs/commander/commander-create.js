@@ -89,11 +89,6 @@ async function CreateProcessing(target, moduleName = defModule, { actionText, fo
  * @param  {number}   tempIndex 当前选择的模版索引
  */
 async function operationModule(objTemp, target, { actionText, forbid, onBefore, tempIndex = 0 }){
-	// // 执行开始创建
-	// log.disable(!!forbid)
-	// log.info(STRBEIGN.format(target.name, actionText))
-	// log.disable(false)
-	// 开始复制或覆盖文件
 	try{
 		// 获取源模版路径
 		let modulePath = objTemp.module

@@ -28,31 +28,31 @@ const STRFAIL  = `<<< error >>> 页面『{0}』{1}失败 \n {2}`.red
  * @param {boolean} forbid 		 禁止输出日志 (默认: false)
  */
 async function ResetProcessing(target, moduleName, actionText = '重置', forbid){
-	// 处理是否允许输出日志
-	log.disable(!!forbid)
-	log.info(STRBEIGN.format(target.name, actionText))
-	log.disable(false)
 	try{
 		// 获取当前可选模版
 		let objTemp
 		let params
 		if (!forbid){
+			log.info(STRBEIGN.format(target.name, actionText))
 			// 获取当前需要删除的页面的模版名称
 			const modulePage = templates.modulePage.get(target.path)
-			// 获取模版对象
-			objTemp = templates(modulePage[0])[modulePage[1]]
-			params = {
-				modulePath: objTemp.module, 
-				targetPath: target.path, 
-				config    : objTemp.config 
-			}
-			// 获取监听执行结果
-			const promiseCallbcak = objTemp.script.onBefore ? objTemp.script.onBefore('reset', params) : Promise.resolve()
-			// 根据模版脚本返回值确定是否继续操作
-			if (await promiseCallbcak === false){
-				// 表示脚本不允许继续往下执行了
-				log.warn(STRABORT.format(target.name))
-				process.exit(0)
+			// 如果不是通过此工具创建的页面则不存在此映射,因此不需要作处理
+			if (modulePage){
+				// 获取模版对象
+				objTemp = templates(modulePage[0])[modulePage[1]]
+				params = {
+					modulePath: objTemp.module, 
+					targetPath: target.path, 
+					config    : objTemp.config 
+				}
+				// 获取监听执行结果
+				const promiseCallbcak = objTemp.script.onBefore ? objTemp.script.onBefore('reset', params) : Promise.resolve()
+				// 根据模版脚本返回值确定是否继续操作
+				if (await promiseCallbcak === false){
+					// 表示脚本不允许继续往下执行了
+					log.warn(STRABORT.format(target.name))
+					process.exit(0)
+				}
 			}
 		}
 		// 当可选模版只有一个的时候可在创建前选删除已有
@@ -69,7 +69,7 @@ async function ResetProcessing(target, moduleName, actionText = '重置', forbid
 		log.disable(false)
 
 		// 操作完成后的回调
-		if (!forbid){
+		if (!forbid && objTemp){
 			objTemp.script.onAfter && objTemp.script.onAfter('reset', params)
 		}
 	} catch (err) {

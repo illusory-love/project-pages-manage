@@ -6,4 +6,7 @@ template:
   custom:
     dir:
       - ../templates/customize
-    cwd: []
+    cwd:
+      - temp
+      - temp/test
+      - temp2

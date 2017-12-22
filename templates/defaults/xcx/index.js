@@ -28,7 +28,7 @@ exports.onAfter = async (cmd, { modulePath, targetPath, config }) => {
 			case 'delete':
 				if (pages.includes(route)){
 					const i = pages.indexOf(route)
-					pages.splice(i, i)
+					pages.splice(i, 1)
 				}
 				break;
 		}
