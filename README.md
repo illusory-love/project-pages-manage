@@ -76,12 +76,12 @@ $ proj t ls
 
 ```
 customModule
-    ├─ module
+    ├─ pages
     |   ├─ somefiles
     |   ├─ somefiles
     |   ├─ ...
     ├─ config.yml
-    ├─ srcipt.js
+    ├─ script.js
 ```
 
 - `customModule` 
@@ -95,7 +95,7 @@ customModule
     - 内置配制 `rename: true` 
         - 表示以当前模版创建页面后是否将页面内的所有文件名全改成与页面名称一致 (主要针对小程序的目录结构)
 
-- `sccript.js` (**可选**) 在创建模版时的事件监听
+- `script.js` (**可选**) 在创建模版时的事件监听
     - 目前仅支持两个监听 `onBefore` & `onAfter`
     - 两监听返回的参数一致
         - cmd: 当前命令名称
@@ -108,6 +108,9 @@ customModule
 示例: 
 ```js
 exports.onBefore = async (cmd, { modulePath, targetPath, config }) => {}
+
+// 返回false会中止命令的执行
+exports.onBefore = async (cmd, { modulePath, targetPath, config }) => false
 
 exports.onAfter  = async (cmd, { modulePath, targetPath, config }) => {}
 ```
@@ -132,7 +135,7 @@ $ proj c pagename -t normal
 ![](./doc/images/01.png)
 
 
-4. ##### 删除页面或目录
+4. 删除页面或目录
 
 > 基本命令: proj delete 或 proj d
 
@@ -142,7 +145,7 @@ $ proj d pagename
 
 
 
-5. ##### 重置页面或目录
+5. 重置页面或目录
 
 > 基本命令: proj reset 或 proj r
 
@@ -160,7 +163,7 @@ $ proj r pagename -t module
 
 ![](./doc/images/01.png)
 
-6. ##### 修改默认配制项
+6. 修改默认配制项
 
 > 基本命令: proj set config key=value
 
@@ -168,4 +171,8 @@ $ proj r pagename -t module
     - module: 在创建页面时的默认模版
 
 
+## 更新历史
 
+v1.0.4 
+
+- `fix` markdown 部分文字错误 
