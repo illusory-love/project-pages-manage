@@ -23,11 +23,97 @@ $ sudo npm i project-pages-manage -gd
 
 ## 使用
 
-1. ##### [模版管理](./doc/TEMPLATE.md)
+1. 模版管理
 
-2. ##### [模版文件规则](./doc/TEMPRULE.md)
+> 模版主命令为: proj template 或 proj t
 
-3. ##### 创建页面或目录
+`add` 添加模版目录 (将指定模版目录添加至自定义模版路径中 **读取模版时将以当前命令执行目录为准查找**)
+
+```bash
+$ proj t add modulename
+$ proj t add modulefolder/modulename
+```
+
+
+`add` 添加全局自定义模版 (以当前目录为准将指定目录作为模版添加至全局自定义模版)
+
+```bash
+$ proj t add modulename -g
+$ proj t add modulefolder/modulename -g
+```
+
+
+`rm` 删除模版配制 (仅删除自定义模版配制路径)
+
+```bash
+$ proj t rm modulename
+$ proj t rm modulefolder/modulename
+```
+
+`rm` 删除模版配制及本地对应的模版文件
+
+```bash
+$ proj t rm modulename -d
+$ proj t rm modulefolder/modulename -d
+```
+
+`rm` 删除全局中的自定义模版
+
+```bash
+$ proj t rm modulename -g
+$ proj t rm modulefolder/modulename -g
+```
+
+`ls` 显示所有的模版配制路径
+
+```bash
+$ proj t ls
+```
+
+
+
+2. 模版文件规则
+
+```
+customModule
+    ├─ module
+    |   ├─ somefiles
+    |   ├─ somefiles
+    |   ├─ ...
+    ├─ config.yml
+    ├─ srcipt.js
+```
+
+- `customModule` 
+    - 模版名称
+
+- `pages` (**必需**) 
+    - 目录名称固定
+    - 里面存放的是创建模版时需要复制的所有文件
+
+- `config.yml` (**可选**) 当前模版的一些配制信息
+    - 内置配制 `rename: true` 
+        - 表示以当前模版创建页面后是否将页面内的所有文件名全改成与页面名称一致 (主要针对小程序的目录结构)
+
+- `sccript.js` (**可选**) 在创建模版时的事件监听
+    - 目前仅支持两个监听 `onBefore` & `onAfter`
+    - 两监听返回的参数一致
+        - cmd: 当前命令名称
+        - option.modulePath: 当前模版的完整路径
+        - option.targetPath: 根据模版创建页面时的目标位置完整路径
+        - option.config: 当前模版的配置信息
+    - 在 `onBefore` 中只有 `return false;` 会中止页面的操作行为
+    - 在 `onBefore` 中如果存在异步行为请使用 `await` 操作, 否则页面的创建不会等待异步的操作结果
+
+示例: 
+```js
+exports.onBefore = async (cmd, { modulePath, targetPath, config }) => {}
+
+exports.onAfter  = async (cmd, { modulePath, targetPath, config }) => {}
+```
+
+
+3. 创建页面或目录
 
 > 基本命令: proj create 或 proj c
 
@@ -80,5 +166,6 @@ $ proj r pagename -t module
 
 目前`config`仅有一个配制项允许修改`module=xcx`
     - module: 在创建页面时的默认模版
+
 
 
