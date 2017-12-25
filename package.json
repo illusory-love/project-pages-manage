@@ -31,5 +31,13 @@
     "write-json": "^2.0.0",
     "write-yaml": "^1.0.0",
     "yargs": "^10.0.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/illusory-love/project-pages-manage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/illusory-love/project-pages-manage/issues"
+  },
+  "homepage": "https://github.com/illusory-love/project-pages-manage#readme"
 }
