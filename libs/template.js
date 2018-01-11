@@ -19,7 +19,7 @@ function getExistTemplateInformation(pathName){
 	// 优先取当前执行命令的目录
 	// 添加配制中的所有模版路径
 	const cusDefaultDirectorys = template.custom.dir
-	const cusDirectorys        = template.custom.cwd
+	const cusDirectorys        = template.custom.cwd.map(arr => arr[1])
 	const defDirectorys        = template.default
 
 	// 遍历获取存在的模版, 不同目录可能存在同名的模版
@@ -36,7 +36,16 @@ function getExistTemplateInformation(pathName){
 		name: pathName
 	})
 
-	return cusDefaultTemp.concat(cusTemp).concat(defTemp).map(templateInformationByPathForCallback)
+	// 追加各模版源路径的查找
+	let sourceTemplates = []
+	template.custom.cwd.map(arr => {
+		sourceTemplates = sourceTemplates.concat(filterTemplate([arr[1]], {
+			root: arr[0],
+			name: pathName
+		}))
+	})
+
+	return cusDefaultTemp.concat(cusTemp).concat(defTemp).concat(sourceTemplates).map(templateInformationByPathForCallback)
 }
 /**
  * 获取指定路径下的模版信息

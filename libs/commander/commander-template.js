@@ -11,7 +11,6 @@ const { forEachFiles } = require('../utils')
 const { filterTemplate } = require('../template')
 const log = require('../log')
 
-
 // 配制文件路径
 const yamlPath = path.join(dir, `./config/config.yml`)
 
@@ -23,13 +22,15 @@ function ordersList(){
 
 	const modulePath1 = template.default.map((directory) => path.join(dir, directory))
 	const modulePath2 = template.custom.dir.map((directory) => path.join(dir, directory))
-	const modulePath3 = template.custom.cwd.map((directory) => path.join(cwd, directory))
+	const modulePath3 = template.custom.cwd.map((array) => path.join.apply(null, array))
+	const modulePath4 = template.custom.cwd.map((array) => path.join(cwd, array[1]))
 
 	// 输出默认模版
 	outputModule('默认', getListOfExistTemplates(modulePath1))
 	// 输出自定义模版
-	outputModule('自定义（全局）', getListOfExistTemplates(modulePath2))
-	outputModule('自定义（本地）', getListOfExistTemplates(modulePath3))
+	outputModule('全局（自定义）', getListOfExistTemplates(modulePath2))
+	outputModule('本地（源路径）', getListOfExistTemplates(modulePath3))
+	outputModule('本地（当前路径）', getListOfExistTemplates(modulePath4))
 }
 
 /**
@@ -44,36 +45,36 @@ function outputModule(tagText, moduleDirectorys){
 		// 遍历模版路径
 		moduleDirectorys.forEach((module) => {
 			// 获取当前模版完整路径
-			const modulePath  = module.path
-
-			log.info(` ${modulePath}`.magenta, '模版目录')
+			// 输出模版目录
+			log.info(`${module.path}`.magenta, tagText)
 			// 读取目录下所有的文件并遍历
-			module.name.length ? module.name.forEach((file) => log.info(` ${file}`, tagText)) : log.warn('<<< 暂无模版 >>>'.yellow)
+			log.info(module.name.join(' '), '模版名称')
 		})
 	}
 }
 
 /**
- * 处理正常的 - 命令
+ * 添加横版
  * @param {string} name   添加的模版名称或路径
  * @param {object} option 二级命令
  */
 async function ordersAdd(name, option){
-
-	// 获取需要添加的模版名称
-	const addModuleName = name;
 	// 获取当前模版配制信息
 	const conf = readYaml.sync(yamlPath)
-	
+	// 处理未指定模版名称的情况
+	if (!name){
+		log.warn(`未指定需要添加的模版名称`.yellow)
+		process.exit()
+	}
 
 	// 准备添加模版
 	if (option.global){
 		// 将自定义模版添加到全局
 		// 判断本地的模版目录是否存在 
-		const localModulePath = path.join(cwd, addModuleName)
-
+		const localModulePath = path.join(cwd, name)
+		// 验证待复制的模版目录是否存在
 		if (!fs.existsSync(localModulePath)){
-			log.error(` 源页面模版「${addModuleName}」不存在`.red)
+			log.warn(`源页面模版「${name}」不存在`.red)
 			process.exit(0)
 		}
 
@@ -83,7 +84,9 @@ async function ordersAdd(name, option){
 
 		// 遍历模版, 判断当前模版是否已存在
 		// 将二维数组转成一维数组
-		const targetName = addModuleName.split(/\/|\\/).slice(-1)[0]
+		// 因只要添加至全局的模版都会放置一级目录, 因此只需要以获取传入的尾部模版名称来判断
+		// temp/xcx 只需要 xcx 就可以了
+		const targetName = name.split(/\/|\\/).slice(-1)[0]
 		if ([].concat.apply([], moduleList.map((module) => module.name)).includes(targetName)){
 			const prompt = new Confirm('已存在同名模版，是否替换？')
 			await prompt.run().then(answer => answer || process.exit())
@@ -93,6 +96,16 @@ async function ordersAdd(name, option){
 		fs.removeSync(path.join(modulePath[0], targetName))
 		// 添加自定义模版至全局中
 		forEachFiles(localModulePath, (pathname, filename) => {
+			// console.log(pathname, ' : ', filename)
+			// proj template add temp2/module -g
+			// /Users/wg/Documents/projects/test/pages/temp2/module/index.js : index.js
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/images : images
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/readme.md : readme.md
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/scripts/index.js : index.js
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/scripts : scripts
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/styles/main.less : main.less
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/styles/vars.less : vars.less
+			// /Users/wg/Documents/projects/test/pages/temp2/module/pages/styles : styles
 			const sourcePath = pathname
 			/** 
 			 * 处理复制至全局后的模版目录名称
@@ -101,39 +114,44 @@ async function ordersAdd(name, option){
 			 * 最终添加至全局的是: ./customize/modulename
 			 * 不会是: ./customize/modulepath/modulename
 			**/
-			const _module = addModuleName.split(/\/|\\/).slice(-1)[0]
-			const _path = path.join(cwd, addModuleName.replace(_module, ''))
-			const _name = pathname.replace(_path, '')
+			const _module    = targetName
+			const _path      = path.join(cwd, name.replace(_module, ''))
+			const _name      = pathname.replace(_path, '')
 			const targetPath = path.join(modulePath[0], _name)
+
+			// console.log(_module, _path, _name, targetPath);
+			// module /Users/wg/Documents/projects/test/pages/temp2/ module/pages/scripts/index.js /Users/wg/Documents/projects/project-pages-manage/templates/customize/module/pages/scripts/index.js
 			// 复制当前文件
 			fs.copySync(sourcePath, targetPath)
-
-			log.info(` ${sourcePath} => ${targetPath}`)
+			log.info(`${sourcePath} => ${targetPath}`)
 		})
-		log.success(` 模版「${addModuleName}」添加成功`.green)
+		log.success(`模版「${name}」添加成功`.green)
 	} else {
 		// 添加本地模版目录,以命令执行
-		const cwd = conf.template.custom.cwd
-
-		if (cwd.includes(addModuleName)){
-			log.warn(`模版目录「${addModuleName}」已存在`.yellow)
+		const _cwd = conf.template.custom.cwd
+		// 验证当前模版路径是否已经添加过了
+		if (_cwd.filter(arr => arr[1] == name).length){
+			log.warn(`模版目录「${name}」已存在`.yellow)
 			process.exit(0)
 		}
-		
-		cwd.push(addModuleName)
+		// 添加当前模版
+		// 模版的源根路径(执行命令时的目录), 模版相对路径
+		_cwd.push([cwd, name])
 		writeYaml.sync(yamlPath, conf)
 
-		log.success(` 模版目录「${addModuleName}」添加成功`.green)
+		log.success(`模版目录「${name}」添加成功`.green)
 	}
 }
 
 /**
  * 获取所有存在的模版
- * @param  {string}  moduleDirectorys 系统默认的自定义模版配制路径
- * @param  {bool}    isLocal          是否是自定义的本地模版
+ * @param  {string}  moduleDirectorys 模版路径列表
  * @return {array}                    已存在的模版
+ *
+ * @param {string} return.path 模版完整根路径
+ * @param {array}  return.name 模版名称列表
  */
-function getListOfExistTemplates(moduleDirectorys, isLocal){
+function getListOfExistTemplates(moduleDirectorys){
 	// 模版列表
 	const moduleList = []
 	// 判断是否存在模版
@@ -141,12 +159,12 @@ function getListOfExistTemplates(moduleDirectorys, isLocal){
 		// 遍历模版路径
 		moduleDirectorys.forEach((modulePath) => {
 			const moduleJson = { 
-				path: isLocal ? modulePath.replace(cwd, '.') :modulePath, 
+				path: modulePath, 
 				name: [] 
 			}
 			// 因添加的自定义模版目录并不是所有项目中都有, 所以需要判断他是否存在 
 			if (fs.existsSync(modulePath)){
-				// 读取模版目录下所有的存在的模版
+				// 读取模版目录下所有存在的文件(一级)
 				fs.readdirSync(modulePath).forEach((filename) => {
 					// 获取当前文件完整路径
 					const pathname = path.join(modulePath, filename)
@@ -179,9 +197,8 @@ function ordersRemove(name, option){
 	const isDelete = !!option.delete
 	const isDeleteFiles = isGlobal || isDelete
 	// 获取需要删除的模版路径
-	// console.log(JSON.stringify(custom))
 	if (!isGlobal){
-		let index = custom.cwd.indexOf(name)
+		let index = custom.cwd.map(arr => arr[1]).indexOf(name)
 		if (index != -1){
 			custom.cwd.splice(index, 1)
 			// 更新配制文件
@@ -195,10 +212,13 @@ function ordersRemove(name, option){
 	}
 
 	// 获取所有存在的模版
-	const moduleList = filterTemplate(isDelete ? [name] : custom[isGlobal ? 'dir' : 'cwd'], {
+	// 获取模版路径
+	const customPath = isGlobal ? custom.dir : custom.cwd.map(arr => arr[1])
+	const moduleList = filterTemplate(isDelete ? [name] : customPath, {
 		root: isGlobal ? dir : cwd,
 		name: isDelete ? '' : name
 	})
+
 	// 判断当前模版是否存在
 	if (!moduleList.length) 
 		return log.warn(`<<< 模版目录「${name}」不存在 >>>`.yellow)

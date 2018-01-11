@@ -7,6 +7,9 @@ const { cwd, dir } = require('./constants')
 // format 方法注册
 format.extend(String.prototype)
 
+// 复制文件时需要排除的文件
+const exclude = ['node_modules', '.DS_Store']
+
 /**
  * 检查待生成的文件或目录是否存在
  * @param  {string} pagename 文件或目录名称
@@ -43,7 +46,7 @@ exports.forEachFiles = (directory, cb) => {
 			// 递归获取目录下的文件
 			exports.forEachFiles(pathname, cb)
 		}
-		// 获取当前文件路径并返回
-		cb && cb(pathname, file)
+		// 获取当前文件路径并返回并排除不需要的文件
+		exclude.includes(file) || cb && cb(pathname, file)
 	})
 }
