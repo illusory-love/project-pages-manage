@@ -173,7 +173,7 @@ $ proj r pagename -t module
 
 ## 更新历史
 
-v1.1.0
+v1.1.0 
 
 - `Improve` 在复制全局模版时添加 `excludes`, 比如 `node_modules` `.DS_Store` 文件无论如何都是不需要复制的 
 - `Improve` 添加模版时记录执行命令时的完整路径. 创建页面查找模版时增加一种查找方式
