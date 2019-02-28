@@ -2,6 +2,8 @@ const path = require('path')
 const fs = require('fs-extra')
 const writeJson = require('write-json')
 
+const {getSubPackIndexByName} = require('./libs/utils')
+
 exports.onBefore = async (cmd, { modulePath, targetPath, config }) => {
 	// console.log('onBefore:', cmd, modulePath, targetPath, config)
 	// return false
@@ -17,21 +19,48 @@ exports.onAfter = async (cmd, { modulePath, targetPath, config }) => {
 	if (fs.pathExistsSync(appPath)){
 		let pagesJson = require(appPath)
 		let pages     = pagesJson.pages
+		let subPack   = pagesJson.subPackages
+		// route => ['pages', 'user_map']
 		let route     = targetPath.replace(cwd, '').replace(/\\/g, '/').replace(/^\//, '').split('/')
-		// 转换成app.json中的路由
-		route = route.concat(route.slice(-1)).join('/')
+		
+		// 获取当前可能存在的分包对象
+		const sub_index = getSubPackIndexByName(subPack, route[0]);
+		// 当前分包
+		const sub_cur   = subPack[sub_index];
+
 		// console.log(cmd, pages)
+
+		// 判断当前操作的是否是分包
+		if (sub_cur !== undefined){
+			// 更新对应的分包路由
+			pages = sub_cur.pages
+
+			route = route.slice(1).concat(route.slice(-1)).join('/')
+		} else {
+			// 转换成app.json中的路由
+			// route => pages/user_map/user_map
+			route = route.concat(route.slice(-1)).join('/')
+		}
+
 		switch(cmd){
 			case 'create':
 				pages.includes(route) || pages.push(route)
 				break;
 			case 'delete':
-				if (pages.includes(route)){
-					const i = pages.indexOf(route)
-					pages.splice(i, 1)
-				}
+				pages.includes(route) && pages.splice(pages.indexOf(route), 1)
 				break;
 		}
+
+		if (sub_cur){
+			// 更新分包中的 pages
+			subPack[sub_index].pages = pages;
+			pagesJson.subPackages = subPack;
+		} else {
+			// 更新页面 pages
+			pagesJson.pages = pages;
+		}
+
+		// 写入更新配置文件
 		writeJson.sync(appPath, pagesJson)
 	}
 }

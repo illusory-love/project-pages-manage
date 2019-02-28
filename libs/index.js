@@ -1,7 +1,7 @@
 const program  = require('commander')
-const appInfo  = require('../package.json')
 const path     = require('path')
 const readYaml = require('read-yaml')
+const appInfo  = require('../package.json')
 
 // 配制文件路径
 const yamlConfig    = readYaml.sync(path.join(__dirname, `./config/config.yml`))

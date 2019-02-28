@@ -11,7 +11,7 @@ const yamlPath = path.join(dir, `config.yml`)
 
 module.exports = (type, value, option) => {
 	// 目前仅有一个配制允许修改
-	if (type == 'config'){
+	if (type === 'config'){
 		// 为了保证配制文件是最新的,所以每次执行都重新读取
 		let config = readYaml.sync(yamlPath)
 		let def    = config.default
