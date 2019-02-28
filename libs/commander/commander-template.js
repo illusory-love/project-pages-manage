@@ -85,7 +85,7 @@ async function ordersAdd(name, option){
 		// 遍历模版, 判断当前模版是否已存在
 		// 将二维数组转成一维数组
 		// 因只要添加至全局的模版都会放置一级目录, 因此只需要以获取传入的尾部模版名称来判断
-		// temp/xcx 只需要 xcx 就可以了
+		// temp/pages 只需要 pages 就可以了
 		const targetName = name.split(/\/|\\/).slice(-1)[0]
 		if ([].concat.apply([], moduleList.map((module) => module.name)).includes(targetName)){
 			const prompt = new Confirm('已存在同名模版，是否替换？')

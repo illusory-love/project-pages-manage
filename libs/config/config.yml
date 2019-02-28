@@ -1,15 +1,9 @@
 default:
-  module: xcx
+  module: pages
 template:
   default:
     - ../templates/defaults
   custom:
     dir:
       - ../templates/customize
-    cwd:
-      - - /Users/wg/Documents/projects/test
-        - pages
-      - - /Users/wg/Documents/projects/test
-        - pages/index
-      - - /Users/wg/Documents/projects/test
-        - pages/temp
+    cwd: []
