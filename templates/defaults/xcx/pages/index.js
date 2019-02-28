@@ -3,7 +3,9 @@ const app = getApp();
 
 Page({
 	// 页面与代码数据交互所必须的 appData 数据对象
-	data: {},
+	data: {
+		
+	},
 	// 页面第一次加载时触发（第一次创建时）
 	onLoad(){
 

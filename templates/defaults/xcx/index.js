@@ -34,7 +34,6 @@ exports.onAfter = async (cmd, { modulePath, targetPath, config }) => {
 		if (sub_cur !== undefined){
 			// 更新对应的分包路由
 			pages = sub_cur.pages
-
 			route = route.slice(1).concat(route.slice(-1)).join('/')
 		} else {
 			// 转换成app.json中的路由
