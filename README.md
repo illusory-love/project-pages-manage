@@ -23,9 +23,60 @@ $ sudo npm i project-pages-manage -gd
 
 ## 使用
 
-1. 模版管理
+### 页面管理
 
-> 模版主命令为: proj template 或 proj t
+**目前所有命令请在项目的根目录下执行, 否则对 app.json 的操作将无效**
+
+
+
+1. 创建页面或目录
+
+> 基本命令: `proj create` 或 `proj c`
+
+```bash
+$ proj c pagename
+```
+在当前路径下创建`pagename`目录, 并使用默认模版 `pages`
+
+```bash
+$ proj c pagename -t normal
+```
+在当前路径下创建`pagename`目录, 并使用模版 `normal`
+
+**当在不同的模版路径下出现同名的模版时, 会提示选择, 并列出模版完整路径**
+
+![](./doc/images/01.png)
+
+
+2. 删除页面或目录
+
+> 基本命令: `proj delete` 或 `proj d`
+
+```bash
+$ proj d pagename
+```
+
+3. 重置页面或目录
+
+> 基本命令: `proj reset` 或 `proj r`
+
+```bash
+$ proj r pagename
+```
+在当前路径下将已经存在的页面或目录`pagename`以默认模版`pages`进行重置
+
+```bash
+$ proj r pagename -t module
+```
+在当前路径下将已经存在的页面或目录`pagename`以模版`module`进行重置
+
+**当在不同的模版路径下出现同名的模版时, 会提示选择, 并列出模版完整路径**
+
+![](./doc/images/01.png)
+
+### 模版管理
+
+> 模版主命令为: `proj template` 或 `proj t`
 
 `add` 添加模版目录 (将指定模版目录添加至自定义模版路径中 **读取模版时将以当前命令执行目录为准查找**)
 
@@ -34,14 +85,12 @@ $ proj t add modulename
 $ proj t add modulefolder/modulename
 ```
 
-
 `add` 添加全局自定义模版 (以当前目录为准将指定目录作为模版添加至全局自定义模版)
 
 ```bash
 $ proj t add modulename -g
 $ proj t add modulefolder/modulename -g
 ```
-
 
 `rm` 删除模版配制 (仅删除自定义模版配制路径)
 
@@ -72,7 +121,7 @@ $ proj t ls
 
 
 
-2. 模版文件规则
+#### 模版文件规则
 
 ```
 customModule
@@ -116,62 +165,26 @@ exports.onAfter  = async (cmd, { modulePath, targetPath, config }) => {}
 ```
 
 
-3. 创建页面或目录
-
-> 基本命令: proj create 或 proj c
-
-```bash
-$ proj c pagename
-```
-在当前路径下创建`pagename`目录, 并使用默认模版 `xcx`
-
-```bash
-$ proj c pagename -t normal
-```
-在当前路径下创建`pagename`目录, 并使用模版 `module`
-
-**当在不同的模版路径下出现同名的模版时, 会提示选择, 并列出模版完整路径**
-
-![](./doc/images/01.png)
-
-
-4. 删除页面或目录
-
-> 基本命令: proj delete 或 proj d
-
-```bash
-$ proj d pagename
-```
-
-
-
-5. 重置页面或目录
-
-> 基本命令: proj reset 或 proj r
-
-```bash
-$ proj r pagename
-```
-在当前路径下将已经存在的页面或目录`pagename`以默认模版`xcx`进行重置
-
-```bash
-$ proj r pagename -t module
-```
-在当前路径下将已经存在的页面或目录`pagename`以模版`module`进行重置
-
-**当在不同的模版路径下出现同名的模版时, 会提示选择, 并列出模版完整路径**
-
-![](./doc/images/01.png)
-
-6. 修改默认配制项
+### 修改默认配制项
 
 > 基本命令: proj set config key=value
 
-目前`config`仅有一个配制项允许修改`module=xcx`
+目前`config`仅有一个配制项允许修改`module=pages`
+
     - module: 在创建页面时的默认模版
+
+-------
+-----
 
 
 ## 更新历史
+
+v1.2.0
+
+- 创建页面时增加对分包的配置项操作
+- 创建页面时增加**小程序组件模版** `proj c pagename -t component`
+
+
 
 v1.1.0
 

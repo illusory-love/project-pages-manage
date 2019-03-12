@@ -1,6 +1,6 @@
 {
   "name": "project-pages-manage",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "",
   "main": "./libs/index.js",
   "scripts": {
@@ -39,13 +39,5 @@
     "write-json": "^2.0.0",
     "write-yaml": "^1.0.0",
     "yargs": "^10.0.3"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/illusory-love/project-pages-manage.git"
-  },
-  "bugs": {
-    "url": "https://github.com/illusory-love/project-pages-manage/issues"
-  },
-  "homepage": "https://github.com/illusory-love/project-pages-manage#readme"
+  }
 }
