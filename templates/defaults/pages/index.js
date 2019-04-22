@@ -14,14 +14,16 @@ exports.onAfter = async (cmd, { modulePath, targetPath, config }) => {
 	// 创建完成后更新 app.json 配制
 	// 获取 app.json 配制文件
 	const cwd     = process.cwd()
-	const appPath = path.join(cwd, 'app.json')
+	// 验证当前目录是否存在 src 默认目录
+	const hasSrcFolder = fs.pathExistsSync(path.join(cwd, 'src'));
+	const appPath = path.join(cwd, hasSrcFolder ? 'src' : '', 'app.json')
 	// 判断此配制文件是是否存在
 	if (fs.pathExistsSync(appPath)){
 		let pagesJson = require(appPath)
 		let pages     = pagesJson.pages
 		let subPack   = pagesJson.subPackages
 		// route => ['pages', 'user_map']
-		let route     = targetPath.replace(cwd, '').replace(/\\/g, '/').replace(/^\//, '').split('/')
+		let route     = targetPath.replace(cwd, '').split(path.sep).filter(n => n && n !== 'src')
 		
 		// 获取当前可能存在的分包对象
 		const sub_index = getSubPackIndexByName(subPack, route[0]);
@@ -38,7 +40,7 @@ exports.onAfter = async (cmd, { modulePath, targetPath, config }) => {
 		} else {
 			// 转换成app.json中的路由
 			// route => pages/user_map/user_map
-			route = route.concat(route.slice(-1)).join('/')
+			route = route.slice(1).concat(route.slice(-1)).join('/')
 		}
 
 		switch(cmd){

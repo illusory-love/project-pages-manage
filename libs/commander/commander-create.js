@@ -185,6 +185,7 @@ module.exports = (pageName, option) => {
 	// 获取当前文件信息
 	const exist = FileExist(pageName);
 	// log.info('moduleName:'+ moduleName)
+
 	// 判断当前页面是否已存在
 	if (exist.result){
 		// 弹出确认覆盖提示
@@ -193,8 +194,8 @@ module.exports = (pageName, option) => {
 			message: `当前页面已存在，请选择您进行的操作？`,
 			choices: [
 				TEXTCANCEL.gray,
-				`${TEXTREPLACE}`.cyan,
-				`${TEXTCOVER}`.cyan
+				TEXTREPLACE.cyan,
+				TEXTCOVER.cyan
 			]
 		});
 		// 监听选择行为

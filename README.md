@@ -179,6 +179,10 @@ exports.onAfter  = async (cmd, { modulePath, targetPath, config }) => {}
 
 ## 更新历史
 
+v1.2.1
+
+- `Imporve` 将 `src` 作为默认目录
+
 v1.2.0
 
 - 创建页面时增加对分包的配置项操作

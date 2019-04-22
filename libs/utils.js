@@ -19,8 +19,12 @@ const exclude = ['node_modules', '.DS_Store']
  *         return.path   {string}  文件或目录的完整路径
  */
 exports.FileExist = (pagename) => {
+	// 验证当前目录是否存在 src 默认目录
+	const hasSrcFolder = fs.pathExistsSync(path.join(cwd, 'src'));
+
 	// 以命令执行的目录作为起始目录
-	const fullPath = path.join(cwd, pagename);
+	const fullPath = path.join(cwd, hasSrcFolder ? 'src' : '', pagename);
+	
 	// 当前目录是否已存在
 	return {
 		result: fs.pathExistsSync(fullPath),
